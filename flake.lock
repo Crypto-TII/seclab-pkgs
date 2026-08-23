@@ -200,10 +200,12 @@
         ]
       },
       "locked": {
-        "lastModified": 1787471818,
-        "narHash": "sha256-1OW+s4/Nf07GZ9VUeDyxZsbzl7uH43cbvcieyyUf0MA=",
-        "path": "/home/brian/projects/code/github.com/brianmcgillion/tms320c28x-re",
-        "type": "path"
+        "lastModified": 1787472086,
+        "narHash": "sha256-lsbb4YZrp12ZPLYGu/+Zn7BQ+wi3pbpKHC8LLu7BTXA=",
+        "owner": "brianmcgillion",
+        "repo": "tms320c28x-re",
+        "rev": "020c219d0d10181326bd4813ac5ba091f6203d11",
+        "type": "github"
       },
       "original": {
         "owner": "brianmcgillion",
