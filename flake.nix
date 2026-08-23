@@ -5,12 +5,12 @@
   nixConfig = {
     substituters = [
       "https://cache.nixos.org"
-      "https://ghaf-dev.cachix.org"
+      "https://ghaf-dev.cachix.org?priority=50"
       "https://nix-community.cachix.org"
     ];
     extra-substituters = [
       "https://cache.nixos.org"
-      "https://ghaf-dev.cachix.org"
+      "https://ghaf-dev.cachix.org?priority=50"
       "https://nix-community.cachix.org"
     ];
     extra-trusted-public-keys = [
