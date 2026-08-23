@@ -143,12 +143,10 @@ let
     });
 
     angr = pyprev.angr.overridePythonAttrs (old: {
-      # setup.py imports setuptools_rust and builds angr.rustylib.
-      cargoDeps = final.rustPlatform.importCargoLock {
-        lockFile = "${old.src}/Cargo.lock";
-        outputHashes = {
-          "icicle-cpu-0.1.0" = "sha256-8xmD2gG101+Uc0rAK78JoL86j++v3k9XcSijsMl95SU=";
-        };
+
+      cargoDeps = final.rustPlatform.fetchCargoVendor {
+        inherit (old) src;
+        hash = "sha256-HnvNJW7Q3bWr2VxtM+Ux0gyDC5P5QlHjZwooyOkGaow=";
       };
       nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [
         final.rustPlatform.cargoSetupHook

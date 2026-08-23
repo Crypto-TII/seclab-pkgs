@@ -2,6 +2,25 @@
 # SPDX-License-Identifier: Apache-2.0
 {
   description = "A collection of packages maintained by the TII Secure Lab";
+  nixConfig = {
+    substituters = [
+      "https://cache.nixos.org"
+      "https://ghaf-dev.cachix.org"
+      "https://nix-community.cachix.org"
+    ];
+    extra-substituters = [
+      "https://cache.nixos.org"
+      "https://ghaf-dev.cachix.org"
+      "https://nix-community.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "ghaf-dev.cachix.org-1:S3M8x3no8LFQPBfHw1jl6nmP8A7cVWKntoMKN3IsEQY="
+      "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+    ];
+
+    allow-import-from-derivation = false;
+  };
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
