@@ -39,6 +39,14 @@
       };
     };
 
+    # TMS320C28x ISA decoder, used by the f28335-dump classification stage.
+    # Its overlay is composed into ours (packages/flake-module.nix) so consumers
+    # get python3Packages.c28x without having to know about this input.
+    tms320c28x-re = {
+      url = "github:brianmcgillion/tms320c28x-re";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Formatting
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";

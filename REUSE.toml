@@ -15,3 +15,12 @@ path = [
   ".github/workflows/check.yml",
   "flake.lock",
 ]
+
+# A Code Composer Studio target-config XML; no comment syntax available for an
+# inline SPDX header, so it is annotated here. Authored in ~/.dotfiles and moved
+# with the package, so it keeps its original licence and copyright.
+[[annotations]]
+path = "packages/python/f28335-tools/f28335_tools/data/f28335_xds200.ccxml"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2025 Brian McGillion"
+SPDX-License-Identifier = "MIT"

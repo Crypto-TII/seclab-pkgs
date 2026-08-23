@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2025 Brian McGillion
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "f28335-tools"
+version = "0.1.0"
+description = "Dump, reconstruct and stitch TMS320F28335 memory via UniFlash + XDS200"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = ["pyyaml>=6.0", "tms320c28x-re"]
+
+[project.scripts]
+f28335-tools = "f28335_tools.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["f28335_tools*"]
+
+[tool.setuptools.package-data]
+f28335_tools = ["data/*.ccxml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

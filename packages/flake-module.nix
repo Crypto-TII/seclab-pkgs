@@ -17,26 +17,47 @@ let
 
       cppPackages = import ./cpp { inherit callPackage; };
       goPackages = import ./go { inherit callPackage; };
+      miscPackages = import ./misc { inherit callPackage; };
       pythonPackages = import ./python { inherit python3Packages; };
       rustPackages = import ./rust { inherit callPackage crane; };
     in
-    cppPackages // goPackages // pythonPackages // rustPackages;
+    cppPackages // goPackages // miscPackages // pythonPackages // rustPackages;
+
+  # nix/checks.nix turns every entry in perSystem.packages into a
+  # `package-<name>` check. Exclude large bin wrappers.
+  ciExclude = [
+    # keep-sorted start
+    "stm32cubeprogrammer"
+    "uniflash"
+    # keep-sorted end
+  ];
 in
 {
   perSystem =
     { pkgs, ... }:
     {
-      packages = mkSeclabPkgs {
+      packages = removeAttrs (mkSeclabPkgs {
         inherit pkgs;
         inherit (inputs) crane;
-      };
+      }) ciExclude;
     };
 
-  # Overlay for use by downstream consumers
-  flake.overlays.default =
-    _final: prev:
-    mkSeclabPkgs {
-      pkgs = prev;
-      inherit (inputs) crane;
-    };
+  # Overlay for use by downstream consumers.
+  #
+  # Resolves through `final`, not `prev`: misc/f28335-dump takes `uniflash` as
+  # an argument and uniflash is contributed by this same overlay, so `prev`
+  # would not have it.
+  # Composed, not bare: f28335-dump's classifier needs python3Packages.c28x,
+  # so carrying tms320c28x-re's overlay here keeps this one self-contained --
+  # downstream consumers add a single overlay and get everything.
+  flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
+    inputs.tms320c28x-re.overlays.default
+    (
+      final: _prev:
+      mkSeclabPkgs {
+        pkgs = final;
+        inherit (inputs) crane;
+      }
+    )
+  ];
 }

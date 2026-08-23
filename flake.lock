@@ -134,7 +134,26 @@
         "flake-root": "flake-root",
         "git-hooks-nix": "git-hooks-nix",
         "nixpkgs": "nixpkgs",
+        "tms320c28x-re": "tms320c28x-re",
         "treefmt-nix": "treefmt-nix"
+      }
+    },
+    "tms320c28x-re": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787471818,
+        "narHash": "sha256-1OW+s4/Nf07GZ9VUeDyxZsbzl7uH43cbvcieyyUf0MA=",
+        "path": "/home/brian/projects/code/github.com/brianmcgillion/tms320c28x-re",
+        "type": "path"
+      },
+      "original": {
+        "owner": "brianmcgillion",
+        "repo": "tms320c28x-re",
+        "type": "github"
       }
     },
     "treefmt-nix": {

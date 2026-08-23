@@ -10,3 +10,7 @@ target/
 .vscode/
 .serena/
 .pre-commit-config.yaml
+
+# Python bytecode
+__pycache__/
+*.py[cod]

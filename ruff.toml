@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
+# SPDX-License-Identifier: Apache-2.0
+#
+# Ruff config for this repo. Note that treefmt invokes `ruff check --fix` with
+# no explicit --select, so the rule set is whatever ruff defaults to; that set
+# has widened in recent releases, which is why these suppressions are needed at
+# all.
+
+[lint.per-file-ignores]
+# The classify/verify modules of f28335-tools. Their broad excepts are
+# deliberate: one probes for an optional import, the other reports a malformed
+# COFF and fails the gate rather than masking it. Suppress rather than rewrite
+# -- this tooling drives JTAG hardware and cannot be exercised in CI.
+"packages/python/f28335-tools/f28335_tools/{classify,verify}.py" = [
+  "BLE001",
+  "S110",
+  "S112",
+]
+
+# reconstruct.py catches broadly around the classification stage on purpose:
+# a decode failure must not sink an otherwise good reconstruction.
+"packages/python/f28335-tools/f28335_tools/reconstruct.py" = ["BLE001"]
