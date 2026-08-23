@@ -51,6 +51,38 @@ nix build .#<pkg>  # build a single package
 It is then automatically available as `packages.<system>.<name>`, as a check,
 and through `overlays.default`.
 
+## Modules
+
+Some things need more than a package attribute. Binary Ninja is installed by
+overriding an upstream derivation's source and `installPhase`, and needs a
+sha256 that differs per user, so it ships as a module pair rather than an
+overlay entry:
+
+| Output                     | Provides                                           |
+| -------------------------- | -------------------------------------------------- |
+| `nixosModules.binaryninja` | `features.development.binaryninja.{enable,sha256}` |
+| `homeModules.binaryninja`  | the install itself, read from `osConfig`           |
+
+```nix
+# NixOS
+imports = [ inputs.seclab-pkgs.nixosModules.binaryninja ];
+features.development.binaryninja = {
+  enable = true;
+  sha256 = "<from stage-required-files>";
+};
+
+# home-manager
+imports = [ inputs.seclab-pkgs.homeModules.binaryninja ];
+```
+
+> **`homeModules.binaryninja` also requires `overlays.default`.** It puts
+> `pkgs.svd2py` on the Binary Ninja plugin PYTHONPATH, so the overlay must be
+> applied to whatever `pkgs` home-manager uses. The module asserts this, so a
+> missing overlay fails at evaluation with an explanation rather than at build
+> time with `attribute 'svd2py' missing`.
+
+The zip itself goes in [`requiredFiles/`](requiredFiles) — see its README.
+
 ## Consuming from another flake
 
 ```nix
@@ -62,6 +94,9 @@ and through `overlays.default`.
     #   nixpkgs.overlays = [ seclab-pkgs.overlays.default ];
     # or directly
     #   seclab-pkgs.packages.x86_64-linux.<name>
+    #
+    # modules are a separate output kind -- overlays.default contributes
+    # package attributes, nixosModules/homeModules contribute options.
   };
 }
 ```

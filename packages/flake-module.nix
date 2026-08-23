@@ -27,6 +27,8 @@ let
   # `package-<name>` check. Exclude large bin wrappers.
   ciExclude = [
     # keep-sorted start
+    # Ghidra plus seven extensions -- far too heavy for every CI run.
+    "ghidra-re"
     "stm32cubeprogrammer"
     "uniflash"
     # keep-sorted end
@@ -51,6 +53,7 @@ in
   # so carrying tms320c28x-re's overlay here keeps this one self-contained --
   # downstream consumers add a single overlay and get everything.
   flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
+    (import ../overlays/angr-suite.nix)
     inputs.tms320c28x-re.overlays.default
     (
       final: _prev:

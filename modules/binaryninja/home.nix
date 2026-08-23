@@ -36,8 +36,12 @@ let
     '';
   };
 
-  # Python packages required by Binary Ninja plugins. svd2py comes from this
-  # same flake's overlay.
+  # Python packages required by Binary Ninja plugins.
+  #
+  # svd2py comes from this flake's overlays.default, which this module
+  # therefore depends on -- see the assertion below. Without it the failure
+  # would be a bare "attribute 'svd2py' missing" at build time, long after the
+  # module evaluated cleanly.
   pluginPythonDeps = with pkgs.python3Packages; [
     click
     pyyaml
@@ -48,6 +52,26 @@ let
   supported = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
 in
 {
+  # Implication rather than a bare check: a consumer who imports this module
+  # but never enables Binary Ninja has no reason to need the overlay.
+  assertions = [
+    {
+      assertion = cfg.enable -> (pkgs ? svd2py);
+      message = ''
+        homeModules.binaryninja needs seclab-pkgs' overlays.default applied to
+        the pkgs home-manager uses: it pulls pkgs.svd2py into the Binary Ninja
+        plugin PYTHONPATH.
+
+        Add it where you build nixpkgs, e.g.
+
+          nixpkgs.overlays = [ inputs.seclab-pkgs.overlays.default ];
+
+        With home-manager.useGlobalPkgs that is the same pkgs as the NixOS one;
+        without it, apply the overlay in the home-manager scope as well.
+      '';
+    }
+  ];
+
   # Not using nix-binary-ninja's own hmModules.binaryninja: it sets
   # nixpkgs.overlays in the home-manager scope, which is incompatible with
   # home-manager.useGlobalPkgs. Add the package directly instead.
