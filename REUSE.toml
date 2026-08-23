@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+
+SPDX-PackageName = "seclab-pkgs"
+SPDX-PackageSupplier = "Technology Innovation Institute <https://tii.ae>"
+SPDX-PackageDownloadLocation = "https://github.com/Crypto-TII/seclab-pkgs"
+
+[[annotations]]
+SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "2025-2026 Technology Innovation Institute (TII)"
+precedence = "closest"
+path = [
+  ".github/workflows/check.yml",
+  "flake.lock",
+]
