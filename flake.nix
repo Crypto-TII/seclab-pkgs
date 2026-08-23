@@ -22,6 +22,13 @@
       flake = false;
     };
 
+    # Binary Ninja upstream packaging; the modules/ tree overrides its source
+    # and installPhase. x86_64-linux only.
+    nix-binary-ninja = {
+      url = "github:jchv/nix-binary-ninja";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Modularity
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
@@ -58,6 +65,7 @@
     inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
+        ./modules/flake-module.nix
         ./nix/flake-module.nix
         ./packages/flake-module.nix
       ];

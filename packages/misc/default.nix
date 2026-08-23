@@ -14,6 +14,7 @@
 {
   # keep-sorted start
   proploader = callPackage ./proploader { };
+  stage-required-files = callPackage ./stage-required-files { };
   stm32cubeprogrammer = callPackage ./stm32cubeprogrammer { };
   uniflash = callPackage ./uniflash { };
   # keep-sorted end

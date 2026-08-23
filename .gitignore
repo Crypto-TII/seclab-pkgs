@@ -14,3 +14,10 @@ target/
 # Python bytecode
 __pycache__/
 *.py[cod]
+
+# Vendor artifacts for requireFile packages. Dropped here by the user and
+# staged into the nix store by `stage-required-files` -- Nix never reads this
+# directory (see requiredFiles/README.md).
+requiredFiles/*
+!requiredFiles/.gitkeep
+!requiredFiles/README.md
