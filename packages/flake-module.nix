@@ -27,6 +27,10 @@ let
   # `package-<name>` check. Exclude large bin wrappers.
   ciExclude = [
     # keep-sorted start
+    # An FHS sandbox around an unfree CUDA 13 closure, x86_64-linux only.
+    # Building it in CI would prove nothing: the derivation is just the
+    # sandbox, and everything that can break happens at runtime inside it.
+    "freetoken"
     # Ghidra plus seven extensions -- far too heavy for every CI run.
     "ghidra-re"
     "stm32cubeprogrammer"

@@ -13,6 +13,7 @@
 { callPackage }:
 {
   # keep-sorted start
+  freetoken = callPackage ./freetoken { };
   ghidra-re = callPackage ./ghidra-re { };
   mcp-reva = callPackage ./mcp-reva { };
   proploader = callPackage ./proploader { };
