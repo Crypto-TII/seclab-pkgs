@@ -24,3 +24,13 @@ path = "packages/python/f28335-tools/f28335_tools/data/f28335_xds200.ccxml"
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2025 Brian McGillion"
 SPDX-License-Identifier = "MIT"
+
+# The Binary Ninja logo, used as the package's desktop icon. Vendored rather
+# than fetched at build time: the upstream URL is unversioned and its content
+# has already changed once, breaking the pinned hash. A binary file cannot
+# carry an inline SPDX header, so it is annotated here.
+[[annotations]]
+path = "modules/binaryninja/logo.png"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Vector 35 Inc."
+SPDX-License-Identifier = "LicenseRef-BinaryNinja-Logo"
