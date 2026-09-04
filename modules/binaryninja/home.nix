@@ -67,6 +67,14 @@ let
   sitePackages = "${venvDir}/lib/python${pkgs.python3.pythonVersion}/site-packages";
   settingsFile = "${binjaDir}/settings.json";
 
+  # One path per line, from the same makePythonPath the wrapper uses, so the
+  # venv and the wrapper cannot list different packages. It is the transitive
+  # closure, not just pluginPythonDeps: httpx alone drags in httpcore, h11,
+  # idna, certifi, anyio and sniffio.
+  pluginDepsPth = pkgs.writeText "nix-plugin-deps.pth" (
+    lib.replaceStrings [ ":" ] [ "\n" ] (pkgs.python3.pkgs.makePythonPath pluginPythonDeps) + "\n"
+  );
+
   sidekickVenvSync = pkgs.writeShellApplication {
     name = "binaryninja-venv-sync";
     runtimeInputs = [
@@ -86,6 +94,12 @@ let
       else
         echo "venv already current for ${pkgs.python3}"
       fi
+
+      # A venv is isolated, so the closure's packages are not on its sys.path
+      # and Binary Ninja resolves plugin dependencies inside it. Drop them in
+      # via a .pth. Rewritten every run, not just when the venv is recreated:
+      # the stamp tracks python, but these paths move whenever any dep does.
+      install -Dm644 "${pluginDepsPth}" "${sitePackages}/nix-plugin-deps.pth"
 
       # settings.json is Binary Ninja's own file, written by its GUI, so merge
       # the one key rather than replacing the document.
