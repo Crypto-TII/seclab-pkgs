@@ -10,6 +10,7 @@
 #     enable = true;
 #     sha256 = "<base32 of your binaryninja_linux_dev_ultimate.zip>";
 #     sidekick.enable = true;   # optional, see below
+#     mcp.enable = true;        # optional, see below
 #   };
 {
   config,
@@ -42,6 +43,15 @@ in
         host to carry a Binary Ninja licence; it is only required when
         `enable` is set, which the assertion below enforces.
       '';
+    };
+
+    mcp = {
+      # Binary Ninja 6.0 ships an MCP server inside the UI in every edition.
+      # This only flips the setting that starts it with the application; the
+      # server is reachable without it via Plugins > MCP > Start Server.
+      #
+      # It listens on http://127.0.0.1:24642/mcp with no authorization.
+      enable = lib.mkEnableOption "the built-in MCP server starting with the Binary Ninja UI";
     };
 
     sidekick = {
@@ -84,8 +94,8 @@ in
       ];
     })
     {
-      # Outside the mkIf above: the point is to catch sidekick being switched
-      # on while Binary Ninja itself is off, which that branch would skip.
+      # Outside the mkIf above: the point is to catch a sub-option being
+      # switched on while Binary Ninja itself is off
       assertions = [
         {
           assertion = cfg.sidekick.enable -> cfg.enable;
@@ -93,6 +103,14 @@ in
             features.development.binaryninja.sidekick.enable is on but
             features.development.binaryninja.enable is off. Sidekick's
             dependencies are only useful to a Binary Ninja install.
+          '';
+        }
+        {
+          assertion = cfg.mcp.enable -> cfg.enable;
+          message = ''
+            features.development.binaryninja.mcp.enable is on but
+            features.development.binaryninja.enable is off. The MCP server
+            runs inside Binary Ninja, so there is nothing to start.
           '';
         }
       ];

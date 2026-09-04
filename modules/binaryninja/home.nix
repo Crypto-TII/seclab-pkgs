@@ -77,10 +77,7 @@ let
 
   sidekickVenvSync = pkgs.writeShellApplication {
     name = "binaryninja-venv-sync";
-    runtimeInputs = [
-      pkgs.coreutils
-      pkgs.jq
-    ];
+    runtimeInputs = [ pkgs.coreutils ];
     text = ''
       stamp="${venvDir}/.nix-python"
 
@@ -100,13 +97,31 @@ let
       # via a .pth. Rewritten every run, not just when the venv is recreated:
       # the stamp tracks python, but these paths move whenever any dep does.
       install -Dm644 "${pluginDepsPth}" "${sitePackages}/nix-plugin-deps.pth"
+    '';
+  };
 
+  # The keys this module owns in Binary Ninja's settings.json, and only those.
+  # An empty set means there is nothing to sync and no unit is defined.
+  settingsPatch =
+    lib.optionalAttrs cfg.sidekick.enable { "python.virtualenv" = sitePackages; }
+    // lib.optionalAttrs cfg.mcp.enable { "ui.mcp.enabled" = true; };
+
+  # One writer for the whole file. Splitting this per feature would mean two
+  # units racing on the same read-modify-write and dropping each other's keys.
+  settingsSync = pkgs.writeShellApplication {
+    name = "binaryninja-settings-sync";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.jq
+    ];
+    text = ''
       # settings.json is Binary Ninja's own file, written by its GUI, so merge
-      # the one key rather than replacing the document.
+      # these keys rather than replacing the document.
       mkdir -p "${binjaDir}"
       [ -f "${settingsFile}" ] || echo '{}' >"${settingsFile}"
       tmp="$(mktemp)"
-      jq --arg sp "${sitePackages}" '. + {"python.virtualenv": $sp}' "${settingsFile}" >"$tmp"
+      jq --argjson patch ${lib.escapeShellArg (builtins.toJSON settingsPatch)} '. + $patch' \
+        "${settingsFile}" >"$tmp"
       mv "$tmp" "${settingsFile}"
     '';
   };
@@ -163,6 +178,18 @@ in
           makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
             --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
 
+          # The headless MCP server ships in the same zip from 6.0 (Commercial
+          # and Ultimate only) but upstream leaves it in opt/, so nothing can
+          # spawn it by name. Same PYTHONPATH as the GUI: it loads the same
+          # user plugins unless the caller passes -p.
+          if [ -f $out/opt/binaryninja/binaryninja_mcp ]; then
+            chmod +x $out/opt/binaryninja/binaryninja_mcp
+            makeWrapper $out/opt/binaryninja/binaryninja_mcp $out/bin/binaryninja_mcp \
+              --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
+          else
+            echo "note: this Binary Ninja zip has no binaryninja_mcp; headless MCP unavailable"
+          fi
+
           runHook postInstall
         '';
       })
@@ -180,4 +207,19 @@ in
     };
     Install.WantedBy = [ "default.target" ];
   };
+
+  systemd.user.services.binaryninja-settings =
+    lib.mkIf (cfg.enable && supported && settingsPatch != { })
+      {
+        Unit = {
+          Description = "Binary Ninja settings owned by nix";
+          # python.virtualenv should not name a venv that does not exist yet.
+          After = [ "binaryninja-venv.service" ];
+        };
+        Service = {
+          Type = "oneshot";
+          ExecStart = lib.getExe settingsSync;
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
 }
