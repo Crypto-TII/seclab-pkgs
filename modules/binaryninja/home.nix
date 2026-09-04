@@ -10,6 +10,7 @@
 { nix-binary-ninja }:
 
 {
+  config,
   lib,
   osConfig,
   pkgs,
@@ -39,17 +40,62 @@ let
   # Python packages required by Binary Ninja plugins.
   #
   # svd2py comes from this flake's overlays.default, which this module
-  # therefore depends on -- see the assertion below. Without it the failure
-  # would be a bare "attribute 'svd2py' missing" at build time, long after the
-  # module evaluated cleanly.
+  # therefore depends on.
   pluginPythonDeps = with pkgs.python3Packages; [
     click
+    httpx
+    jinja2
+    markdown-it-py
+    networkx
+    numpy
+    orjson
+    psutil
+    pydantic
+    pygments
     pyyaml
+    requests
+    sqlite-vec
     pkgs.svd2py
   ];
 
   # nix-binary-ninja only publishes an x86_64-linux build.
   supported = pkgs.stdenv.hostPlatform.system == "x86_64-linux";
+
+  # Sidekick's remaining pip set, resolved into a venv rather than packaged.
+  binjaDir = "${config.home.homeDirectory}/.binaryninja";
+  venvDir = "${binjaDir}/venv";
+  sitePackages = "${venvDir}/lib/python${pkgs.python3.pythonVersion}/site-packages";
+  settingsFile = "${binjaDir}/settings.json";
+
+  sidekickVenvSync = pkgs.writeShellApplication {
+    name = "binaryninja-venv-sync";
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.jq
+    ];
+    text = ''
+      stamp="${venvDir}/.nix-python"
+
+      if [ "$(cat "$stamp" 2>/dev/null || true)" != "${pkgs.python3}" ] ||
+        [ ! -x "${venvDir}/bin/python" ]; then
+        echo "recreating venv for ${pkgs.python3}"
+        rm -rf "${venvDir}"
+        "${pkgs.python3}/bin/python3" -m venv "${venvDir}"
+        "${venvDir}/bin/pip" install --disable-pip-version-check ${lib.escapeShellArgs cfg.sidekick.pipPackages}
+        printf '%s' "${pkgs.python3}" >"$stamp"
+      else
+        echo "venv already current for ${pkgs.python3}"
+      fi
+
+      # settings.json is Binary Ninja's own file, written by its GUI, so merge
+      # the one key rather than replacing the document.
+      mkdir -p "${binjaDir}"
+      [ -f "${settingsFile}" ] || echo '{}' >"${settingsFile}"
+      tmp="$(mktemp)"
+      jq --arg sp "${sitePackages}" '. + {"python.virtualenv": $sp}' "${settingsFile}" >"$tmp"
+      mv "$tmp" "${settingsFile}"
+    '';
+  };
 in
 {
   # Implication rather than a bare check: a consumer who imports this module
@@ -108,4 +154,16 @@ in
       })
     )
   ];
+
+  # Sidekick resolves these at runtime; `systemd.user.startServices` restarts
+  # this unit whenever the embedded python store path changes, which is what
+  # makes the venv self-healing across nixpkgs bumps.
+  systemd.user.services.binaryninja-venv = lib.mkIf (cfg.enable && cfg.sidekick.enable && supported) {
+    Unit.Description = "Binary Ninja Sidekick venv";
+    Service = {
+      Type = "oneshot";
+      ExecStart = lib.getExe sidekickVenvSync;
+    };
+    Install.WantedBy = [ "default.target" ];
+  };
 }

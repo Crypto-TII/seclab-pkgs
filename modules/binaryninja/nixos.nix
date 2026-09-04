@@ -9,6 +9,7 @@
 #   features.development.binaryninja = {
 #     enable = true;
 #     sha256 = "<base32 of your binaryninja_linux_dev_ultimate.zip>";
+#     sidekick.enable = true;   # optional, see below
 #   };
 {
   config,
@@ -42,18 +43,59 @@ in
         `enable` is set, which the assertion below enforces.
       '';
     };
+
+    sidekick = {
+      # Off even when Binary Ninja is on: Sidekick is a separately licensed
+      # Vector 35 extension, and enabling it resolves packages from PyPI.
+      enable = lib.mkEnableOption "the Sidekick plugin's Python dependencies";
+
+      pipPackages = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "pysqlite3>=0.5.0"
+          "pyright[nodejs]>=1.1.405"
+          "tenacity>=8.5.0,<9"
+        ];
+        description = ''
+          Sidekick pip requirements that the package closure cannot supply,
+          in pip requirement syntax.
+
+          The default is Sidekick 26.1.521's declared set minus everything
+          homeModules.binaryninja already puts on the plugin PYTHONPATH:
+          nixpkgs carries no pysqlite3 and no pyright, and its tenacity is 9.x
+          against Sidekick's <9 bound. An option rather than a constant so a
+          newer Sidekick can be followed without changing this flake.
+        '';
+      };
+    };
   };
 
-  config = lib.mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.sha256 != null;
-        message = ''
-          features.development.binaryninja.enable is on but sha256 is unset.
-          Drop binaryninja_linux_dev_ultimate.zip into seclab-pkgs'
-          requiredFiles/ and run `stage-required-files` to get the hash.
-        '';
-      }
-    ];
-  };
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      assertions = [
+        {
+          assertion = cfg.sha256 != null;
+          message = ''
+            features.development.binaryninja.enable is on but sha256 is unset.
+            Drop binaryninja_linux_dev_ultimate.zip into seclab-pkgs'
+            requiredFiles/ and run `stage-required-files` to get the hash.
+          '';
+        }
+      ];
+    })
+    {
+      # Outside the mkIf above: the point is to catch sidekick being switched
+      # on while Binary Ninja itself is off, which that branch would skip.
+      assertions = [
+        {
+          assertion = cfg.sidekick.enable -> cfg.enable;
+          message = ''
+            features.development.binaryninja.sidekick.enable is on but
+            features.development.binaryninja.enable is off. Sidekick's
+            dependencies are only useful to a Binary Ninja install.
+          '';
+        }
+      ];
+    }
+  ];
 }
