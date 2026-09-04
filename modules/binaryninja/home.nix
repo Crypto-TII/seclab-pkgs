@@ -94,12 +94,9 @@ in
           mkdir -p $out/opt/binaryninja
           mkdir -p $out/share/pixmaps
           cp -r * $out/opt/binaryninja
-          cp ${
-            pkgs.fetchurl {
-              url = "https://docs.binary.ninja/img/logo.png";
-              hash = "sha256-TzGAAefTknnOBj70IHe64D6VwRKqIDpL4+o9kTw0Mn4=";
-            }
-          } $out/share/pixmaps/binaryninja.png
+          # Vendored rather than fetched: the upstream URL is unversioned and
+          # its content already changed once, breaking the pinned hash.
+          cp ${./logo.png} $out/share/pixmaps/binaryninja.png
           chmod +x $out/opt/binaryninja/binaryninja
           buildPythonPath "$pythonDeps"
           pluginPythonPath="${pkgs.python3.pkgs.makePythonPath pluginPythonDeps}"

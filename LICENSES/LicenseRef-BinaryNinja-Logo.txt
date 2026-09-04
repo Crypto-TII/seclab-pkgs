@@ -1,0 +1,8 @@
+The Binary Ninja logo is a trademark of Vector 35 Inc.
+
+It is included in this repository solely to identify the Binary Ninja
+application as the icon of the desktop entry produced by
+modules/binaryninja. No ownership is claimed over the mark, and this
+repository grants no licence to it.
+
+Source: https://docs.binary.ninja/img/logo.png
