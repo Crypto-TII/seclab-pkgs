@@ -2,19 +2,11 @@
 # SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
 # SPDX-License-Identifier: Apache-2.0
 #
-# Stage the vendor artifacts in requiredFiles/ into the nix store so that
-# `pkgs.requireFile` can resolve them, and print each one's hash.
-#
-# requireFile reads the *store*, never a path in the repo, so dropping a file in
-# requiredFiles/ does nothing on its own -- this script is the bridge. See
-# requiredFiles/README.md.
-#
-# Both hash formats are printed because the consumers disagree: Binary Ninja
-# wants base32, stm32cubeprogrammer wants SRI.
-#
-# Requires: nix (nix-hash, nix-store, nix)
+# requireFile reads the store, never a path in the repo, so dropping a file in
+# requiredFiles/ does nothing on its own -- this is the bridge.
+# Both hash formats are printed: Binary Ninja wants base32, stm32 wants SRI.
 
-# Locate the checkout: PRJ_ROOT is set by the devshell, otherwise ask git.
+# PRJ_ROOT is set by the devshell, otherwise ask git.
 root="${PRJ_ROOT:-}"
 if [ -z "$root" ]; then
   root="$(git rev-parse --show-toplevel 2>/dev/null || true)"

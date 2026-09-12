@@ -41,7 +41,6 @@ let
         --prefix "$TMPDIR/uniflash" \
         || true  # Installer may warn about missing GUI libs but still extracts
 
-      # Verify installation succeeded
       test -f "$TMPDIR/uniflash/dslite.sh" \
         || (echo "Installation failed: dslite.sh not found"; exit 1)
 
@@ -53,20 +52,16 @@ let
 
       local installDir="$TMPDIR/uniflash"
 
-      # Main application directory
       mkdir -p $out/opt/uniflash
       cp -r "$installDir"/. $out/opt/uniflash/
 
-      # Ensure key binaries are executable
       chmod +x $out/opt/uniflash/dslite.sh
       chmod +x $out/opt/uniflash/deskdb/content/TICloudAgent/linux/ccs_base/DebugServer/bin/DSLite
 
-      # Fix broken absolute symlinks created by installer
       # The installer creates absolute symlinks to $TMPDIR paths for shared
       # fonts ($TMPDIR is /build in the default sandbox, but not guaranteed)
       find $out -type l -lname "$TMPDIR/*" -delete
 
-      # Re-create the font links as relative symlinks
       local fontsDir="$out/opt/uniflash/uniflash/public/fonts"
       local slFontsDir="$out/opt/uniflash/simplelink/imagecreator/web/fonts"
       if [ -d "$fontsDir" ] && [ -d "$slFontsDir" ]; then
@@ -74,13 +69,11 @@ let
         ln -sf "../../../../../uniflash/public/fonts/open-sans" "$slFontsDir/open-sans/open-sans" 2>/dev/null || true
       fi
 
-      # Install udev rules for TI debug probes (XDS200, XDS110, etc.)
       mkdir -p $out/lib/udev/rules.d
       cp "$installDir/TICloudAgentHostApp/install_scripts/71-ti-permissions.rules" \
          $out/lib/udev/rules.d/
       cp "$installDir/TICloudAgentHostApp/install_scripts/70-mm-no-ti-emulators.rules" \
          $out/lib/udev/rules.d/
-      # Blackhawk XDS probes (XDS560, XDS510 USB variants)
       cp "$installDir/deskdb/content/TICloudAgent/linux/ccs_base/emulation/Blackhawk/Install/71-bh-permissions.rules" \
          $out/lib/udev/rules.d/
 
@@ -102,14 +95,11 @@ let
     };
   };
 
-  # Shared FHS target packages for all wrappers
   fhsTargetPkgs =
     pkgs: with pkgs; [
-      # USB and hardware access
       libusb1
       udev
 
-      # Graphics / display (for GUI - node-webkit based)
       libGL
       libgbm
       libdrm
@@ -126,7 +116,6 @@ let
       libxtst
       libxrender
 
-      # GTK / desktop integration
       gtk3
       glib
       pango
@@ -134,12 +123,10 @@ let
       at-spi2-atk
       dbus
 
-      # Crypto / networking
       openssl
       nss
       nspr
 
-      # General
       zlib
       expat
       cups
@@ -148,7 +135,6 @@ let
       fontconfig
     ];
 
-  # Helper to create an FHS-wrapped entry point
   mkFHSWrapper =
     {
       pname,
@@ -163,7 +149,6 @@ let
       extraInstallCommands = extraCommands;
     };
 
-  # CLI wrapper (dslite - primary flash/debug tool)
   cli = mkFHSWrapper {
     pname = "dslite";
     runScript = writeShellScript "dslite" ''
@@ -172,7 +157,6 @@ let
       exec "${package}/opt/uniflash/dslite.sh" "$@"
     '';
     extraCommands = ''
-      # Expose udev rules for services.udev.packages
       if [ -d "${package}/lib/udev" ]; then
         mkdir -p $out/lib/udev
         ln -sf ${package}/lib/udev/* $out/lib/udev/
@@ -180,7 +164,6 @@ let
     '';
   };
 
-  # GUI wrapper (node-webkit based)
   gui = mkFHSWrapper {
     pname = "uniflash";
     runScript = writeShellScript "uniflash-gui" ''

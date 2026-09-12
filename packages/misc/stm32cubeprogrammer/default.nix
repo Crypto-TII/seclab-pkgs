@@ -34,8 +34,7 @@ let
     pname = "stm32cubeprogrammer-unwrapped";
     inherit version;
 
-    # This mechanism requires that the file is registered in the nix store
-    # nix-store --add-fixed sha256 /path/to/SetupSTM32CubeProgrammer_linux_64.zip
+    # Register with: nix-store --add-fixed sha256 <zip>
     src = requireFile {
       name = "SetupSTM32CubeProgrammer_linux_64.zip";
       url = "https://www.st.com/en/development-tools/stm32cubeprog.html";
@@ -61,7 +60,6 @@ let
     buildPhase = ''
       runHook preBuild
 
-      # Create auto-install descriptor for IzPack silent installation
       # Panel IDs extracted from resources/panelsOrder in the installer JAR
       cat > auto-install.xml << AUTOXML
       <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -86,7 +84,6 @@ let
       </AutomatedInstallation>
       AUTOXML
 
-      # Run the IzPack installer using nixpkgs JDK
       # HOME must be writable because the installer tries to modify .bashrc
       export HOME="$TMPDIR/fakehome"
       mkdir -p "$HOME"
@@ -95,7 +92,6 @@ let
       java -jar SetupSTM32CubeProgrammer-${version}.exe auto-install.xml \
         || true  # Installer may return non-zero even on success
 
-      # Verify installation succeeded
       test -d "$TMPDIR/stm32cubeprog-install/bin" \
         || (echo "Installation failed: bin directory not found"; exit 1)
 
@@ -107,27 +103,22 @@ let
 
       local installDir="$TMPDIR/stm32cubeprog-install"
 
-      # Main application directory
       mkdir -p $out/opt/STM32CubeProgrammer
       cp -r "$installDir"/. $out/opt/STM32CubeProgrammer/
 
-      # Copy the bundled JRE (includes JavaFX, needed for GUI)
-      # The JRE is extracted from the zip alongside the installer, not inside the install target
+      # The JRE sits alongside the installer in the zip, not in the install target.
       cp -r jre $out/opt/STM32CubeProgrammer/jre
 
-      # Ensure binaries are executable
       chmod +x $out/opt/STM32CubeProgrammer/bin/STM32_Programmer_CLI \
                $out/opt/STM32CubeProgrammer/bin/STM32_SigningTool_CLI \
                $out/opt/STM32CubeProgrammer/bin/STM32TrustedPackageCreator_CLI \
         2>/dev/null || true
 
-      # Install udev rules
       if [ -d "$installDir/Drivers/rules" ]; then
         mkdir -p $out/lib/udev/rules.d
         cp "$installDir"/Drivers/rules/*.rules $out/lib/udev/rules.d/
       fi
 
-      # Build OpenJFX module JARs from the exploded module directories
       # JDK 21's --module-path requires JARs, not exploded class dirs
       mkdir -p $out/opt/STM32CubeProgrammer/javafx-modules
       for mod in ${openjfx21}/modules/javafx.*; do
@@ -135,7 +126,6 @@ let
         jar --create --file "$out/opt/STM32CubeProgrammer/javafx-modules/$modname.jar" -C "$mod" .
       done
 
-      # Desktop entry
       mkdir -p $out/share/applications
       cp ${desktopItem}/share/applications/*.desktop $out/share/applications/
 
@@ -160,14 +150,11 @@ let
     };
   };
 
-  # Shared FHS target packages for all wrappers
   fhsTargetPkgs =
     pkgs: with pkgs; [
-      # USB and hardware access
       libusb1
       udev
 
-      # Graphics / Qt deps
       libGL
       libdrm
       libgbm
@@ -187,7 +174,6 @@ let
       fontconfig
       xrdb
 
-      # GTK / desktop integration
       gtk3
       glib
       pango
@@ -195,11 +181,9 @@ let
       at-spi2-atk
       dbus
 
-      # Crypto
       openssl
       krb5
 
-      # General
       zlib
       cups
       nspr
@@ -208,7 +192,6 @@ let
       alsa-lib
     ];
 
-  # Helper to create an FHS-wrapped entry point
   mkFHSWrapper =
     {
       pname,
@@ -223,18 +206,15 @@ let
       extraInstallCommands = extraCommands;
     };
 
-  # GUI wrapper
   gui = mkFHSWrapper {
     pname = "stm32cubeprogrammer";
     runScript = writeShellScript "stm32cubeprogrammer-gui" ''
       export LD_LIBRARY_PATH="${package}/opt/STM32CubeProgrammer/lib:${openjfx21}/modules_libs/javafx.graphics:${openjfx21}/modules_libs/javafx.media:${openjfx21}/modules_libs/javafx.base''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
-      # App expects to run from its bin directory for relative path lookups
       cd "${package}/opt/STM32CubeProgrammer/bin"
 
-      # HiDPI scaling: GDK_SCALE works at the GTK level for XWayland apps
-      # Override with STM32CUBEPROG_SCALE env var (default: 1; try 3 on
-      # HiDPI displays)
+      # GDK_SCALE works at the GTK level for XWayland apps; override with
+      # STM32CUBEPROG_SCALE (try 3 on HiDPI).
       export GDK_SCALE=''${STM32CUBEPROG_SCALE:-1}
       export GDK_DPI_SCALE=1
 
@@ -253,7 +233,6 @@ let
       mkdir -p $out/share/applications
       ln -sf ${package}/share/applications/* $out/share/applications/
 
-      # Expose udev rules for services.udev.packages
       if [ -d "${package}/lib/udev" ]; then
         mkdir -p $out/lib/udev
         ln -sf ${package}/lib/udev/* $out/lib/udev/
@@ -261,7 +240,6 @@ let
     '';
   };
 
-  # CLI wrapper
   cli = mkFHSWrapper {
     pname = "STM32_Programmer_CLI";
     runScript = writeShellScript "stm32-programmer-cli" ''
@@ -271,7 +249,6 @@ let
     '';
   };
 
-  # Signing tool CLI wrapper
   signingCli = mkFHSWrapper {
     pname = "STM32_SigningTool_CLI";
     runScript = writeShellScript "stm32-signingtool-cli" ''
@@ -281,7 +258,6 @@ let
     '';
   };
 
-  # TPC GUI wrapper
   tpc = mkFHSWrapper {
     pname = "STM32TrustedPackageCreator";
     runScript = writeShellScript "stm32-tpc" ''

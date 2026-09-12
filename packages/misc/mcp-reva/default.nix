@@ -1,9 +1,6 @@
 # SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
 # SPDX-License-Identifier: Apache-2.0
 #
-# Headless side of ReVa: a stdio MCP server that starts and manages Ghidra
-# itself via PyGhidra.
-#
 # python313, not python3: angr and pwntools are not packaged for 3.14, and a
 # shell using both this and angr needs one interpreter that can import both.
 {

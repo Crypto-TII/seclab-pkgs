@@ -32,19 +32,16 @@
             config.treefmt.build.wrapper
           ]
           ++ config.pre-commit.settings.enabledPackages
-          ++ lib.attrValues config.treefmt.build.programs; # make all the treefmt packages available
+          ++ lib.attrValues config.treefmt.build.programs;
 
           startup.hook.text = config.pre-commit.installationScript;
 
-          # Pull in the build inputs of every package defined in this repo.
           packagesFrom =
             let
               excluded = [
-                # Function attributes, not packages.
                 "override"
                 "overrideDerivation"
               ]
-              # Heavy or conflicting closures.
               ++ (import ./exclusions.nix).devshell;
               isPackage = name: _value: !(lib.elem name excluded);
             in

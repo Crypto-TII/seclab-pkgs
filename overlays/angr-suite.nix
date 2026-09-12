@@ -1,13 +1,10 @@
 # SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
 # SPDX-License-Identifier: Apache-2.0
 #
-# nixpkgs ships an incoherent angr suite: angr 9.2.193 pins archinfo/cle/pyvex
-# to ==9.2.193 but they sit at 9.2.154, and angr's expression predates its Rust
-# extension so it fails with "angr requires setuptools-rust to build".
-#
-# Bumping forward rather than back: 9.2.154 calls `self.clex.filename = ...`,
-# which pycparser 3.00 rejects. Drop this file once nixpkgs ships a buildable
-# angr.
+# nixpkgs ships an incoherent angr suite: angr pins archinfo/cle/pyvex to its
+# own version but they lag, and its expression predates the Rust extension.
+# Bumping forward, not back: 9.2.154 trips pycparser 3.00. Drop once nixpkgs
+# ships a buildable angr.
 final: prev:
 
 let
@@ -47,9 +44,8 @@ let
       meta.description = "Parser for UEFI firmware volumes and BIOS images";
     });
 
-    # cle's PE backend imports pyxdia unconditionally. Its sdist downloads a
-    # prebuilt binary during setup.py, which the sandbox blocks -- use the wheel,
-    # which already bundles it.
+    # pyxdia's sdist downloads a prebuilt binary during setup.py, which the
+    # sandbox blocks -- the wheel already bundles it.
     pyxdia =
       let
         version = "0.1.1";

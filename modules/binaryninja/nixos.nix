@@ -1,17 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2025 Brian McGillion
-# Binary Ninja - reverse engineering platform
 #
-# Options only. The install lives in the matching home-manager module
-# (homeModules.binaryninja), which reads these through osConfig.
-#
-# Usage:
-#   features.development.binaryninja = {
-#     enable = true;
-#     sha256 = "<base32 of your binaryninja_linux_dev_ultimate.zip>";
-#     sidekick.enable = true;   # optional, see below
-#     mcp.enable = true;        # optional, see below
-#   };
+# Options only; the install lives in homeModules.binaryninja, which reads these
+# through osConfig.
 {
   config,
   lib,
@@ -46,17 +37,13 @@ in
     };
 
     mcp = {
-      # Binary Ninja 6.0 ships an MCP server inside the UI in every edition.
-      # This only flips the setting that starts it with the application; the
-      # server is reachable without it via Plugins > MCP > Start Server.
-      #
-      # It listens on http://127.0.0.1:24642/mcp with no authorization.
+      # Only flips the autostart setting; the server is reachable regardless via
+      # Plugins > MCP > Start Server, and listens on 127.0.0.1:24642 unauthenticated.
       enable = lib.mkEnableOption "the built-in MCP server starting with the Binary Ninja UI";
     };
 
     sidekick = {
-      # Off even when Binary Ninja is on: Sidekick is a separately licensed
-      # Vector 35 extension, and enabling it resolves packages from PyPI.
+      # Separately licensed, and enabling it resolves packages from PyPI.
       enable = lib.mkEnableOption "the Sidekick plugin's Python dependencies";
 
       pipPackages = lib.mkOption {
@@ -94,8 +81,7 @@ in
       ];
     })
     {
-      # Outside the mkIf above: the point is to catch a sub-option being
-      # switched on while Binary Ninja itself is off
+      # Outside the mkIf: catches a sub-option set while Binary Ninja is off.
       assertions = [
         {
           assertion = cfg.sidekick.enable -> cfg.enable;

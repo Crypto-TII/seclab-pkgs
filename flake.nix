@@ -25,7 +25,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    # Rust / Cargo building
     crane = {
       url = "github:ipetkov/crane";
     };
@@ -41,14 +40,12 @@
       flake = false;
     };
 
-    # Binary Ninja upstream packaging; the modules/ tree overrides its source
-    # and installPhase. x86_64-linux only.
+    # The modules/ tree overrides its source and installPhase. x86_64-linux only.
     nix-binary-ninja = {
       url = "github:jchv/nix-binary-ninja";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Modularity
     flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
@@ -56,7 +53,6 @@
 
     flake-root.url = "github:srid/flake-root";
 
-    # To ensure that checks are run locally to enforce cleanliness
     git-hooks-nix = {
       url = "github:cachix/git-hooks.nix";
       inputs = {
@@ -65,15 +61,12 @@
       };
     };
 
-    # TMS320C28x ISA decoder, used by the f28335-dump classification stage.
-    # Its overlay is composed into ours (packages/flake-module.nix) so consumers
-    # get python3Packages.c28x without having to know about this input.
+    # Its overlay is composed into ours so consumers get python3Packages.c28x.
     tms320c28x-re = {
       url = "github:brianmcgillion/tms320c28x-re";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Formatting
     treefmt-nix = {
       url = "github:numtide/treefmt-nix";
       inputs.nixpkgs.follows = "nixpkgs";
