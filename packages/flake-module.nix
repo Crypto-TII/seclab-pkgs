@@ -2,14 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 { inputs, ... }:
 let
-  # Build all seclab packages given a pkgs set.
-  # This function is reused by both perSystem.packages and the overlay.
-  #
-  # Uses `import` instead of `callPackage` for the category directories so that
-  # the resulting attrset has statically-known attribute names.  This keeps the
-  # overlay lazy: nixpkgs's fixed-point can determine which names the overlay
-  # contributes without forcing `pkgs.callPackage` (which would cause infinite
-  # recursion when the overlay is composed with other overlays).
+  # `import`, not `callPackage`, for the category dirs: the attribute names must
+  # be statically known or composing this overlay with others recurses forever.
   mkSeclabPkgs =
     { pkgs, crane }:
     let
@@ -24,8 +18,7 @@ let
     cppPackages // goPackages // miscPackages // pythonPackages // rustPackages;
 in
 {
-  # The full set, unfiltered. Heavy packages are held back in nix/exclusions.nix
-  # at the layers that build them (nix/checks.nix, nix/devshell.nix).
+  # Unfiltered; heavy packages are held back in nix/exclusions.nix.
   perSystem =
     { pkgs, ... }:
     {
@@ -35,14 +28,8 @@ in
       };
     };
 
-  # Overlay for use by downstream consumers.
-  #
-  # Resolves through `final`, not `prev`: misc/f28335-dump takes `uniflash` as
-  # an argument and uniflash is contributed by this same overlay, so `prev`
-  # would not have it.
-  # Composed, not bare: f28335-dump's classifier needs python3Packages.c28x,
-  # so carrying tms320c28x-re's overlay here keeps this one self-contained --
-  # downstream consumers add a single overlay and get everything.
+  # Through `final`, not `prev`: f28335-tools takes uniflash, which this same
+  # overlay contributes. Composed, so consumers get c28x from one overlay.
   flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
     (import ../overlays/angr-suite.nix)
     inputs.tms320c28x-re.overlays.default

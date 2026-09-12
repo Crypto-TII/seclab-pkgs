@@ -1,10 +1,8 @@
 # SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
 # SPDX-License-Identifier: Apache-2.0
 #
-# ReVa publishes one prebuilt extension zip per Ghidra release. There is a 12.1
-# asset but no 12.1.2 one, and Ghidra refuses an extension whose
-# extension.properties version differs from the running application -- so the
-# zip is restamped below.
+# ReVa ships one prebuilt zip per Ghidra release and Ghidra refuses one whose
+# extension.properties version differs from the running application.
 {
   lib,
   stdenvNoCC,

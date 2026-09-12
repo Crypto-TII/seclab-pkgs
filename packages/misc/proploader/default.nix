@@ -1,16 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2025 Brian McGillion
 #
-# PropLoader: Parallax's command-line loader for the Propeller (P8X32A). Loads
-# programs into Propeller RAM/EEPROM over serial (or WiFi). Useful for flashing
-# and updating Propeller-based hardware such as the JTAGulator.
-#
-# Build notes: the upstream Makefile builds out-of-tree into
-# ../proploader-<os>-build, does not auto-detect the OS for non-Windows hosts
-# (so OS=linux must be passed), and derives VERSION from `git describe` (absent
-# in the sandbox, hence the explicit VERSION). The second-stage loader is a Spin
-# program compiled with openspin at build time and embedded into the binary via
-# the in-tree bin2c/split helpers, so there are no runtime data files.
+# Upstream's Makefile builds out-of-tree, does not detect a non-Windows OS
+# (hence OS=linux), and takes VERSION from `git describe`, absent in the sandbox.
 {
   lib,
   stdenv,

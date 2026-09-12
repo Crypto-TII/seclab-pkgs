@@ -10,6 +10,23 @@ let
   policy = {
     # nix-update targets; the value is its extra argv. Every flag is load-bearing.
     auto = {
+      # Two tag streams: the weekly cronbuild-* and the dormant, hand-cut
+      # release_*. Matching cronbuild only keeps a version sort from flipping
+      # between them, and skips the malformed release_7.91.18308B/C tags.
+      dynamorio = [
+        "--version=stable"
+        "-vr"
+        "cronbuild-([0-9.]+)"
+      ];
+
+      # Master pin: the last tag is v0.9 (2022), ~800 commits behind. Same
+      # shape as proploader -- the regex keeps a non-numeric tag from winning.
+      libtriton = [
+        "--version=branch"
+        "-vr"
+        "v?([0-9].*)"
+      ];
+
       # No src: ft-launcher.sh installs `freetoken[accel]==<version>` at run
       # time, so the version is a pip requirement and must track PyPI, not the
       # git tags -- those carry a moving `nightly` and can precede the wheel.

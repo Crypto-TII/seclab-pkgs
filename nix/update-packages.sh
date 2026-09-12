@@ -52,7 +52,18 @@ run_update() {
   printf '==> %s\n' "$attr" >&2
   if out=$(nix-update --flake "$@" "${extra[@]}" "$attr" 2>&1); then
     if line=$(printf '%s\n' "$out" | grep -m1 '^Update '); then
-      updated+=("$attr: ${line#Update }")
+      # `Update <old> -> <new> in <file>`. nix-update prints this even when the
+      # two versions are equal (dynamorio does it on every run), so compare
+      # rather than trusting the line's presence.
+      change=${line#Update }
+      old=${change%% -> *}
+      new=${change#* -> }
+      new=${new%% in *}
+      if [ "$old" = "$new" ]; then
+        unchanged+=("$attr")
+      else
+        updated+=("$attr: $change")
+      fi
     else
       unchanged+=("$attr")
     fi

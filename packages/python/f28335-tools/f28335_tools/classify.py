@@ -78,11 +78,8 @@ def _ensure_c28x_importable() -> None:
     raise SystemExit(3)
 
 
-# Bound lazily by _load_c28x(). Importing this module must not require the
-# decoder: f28335_tools.reconstruct imports it, and `f28335-tools stitch` has
-# no business failing because c28x is unavailable. Safe as annotations because
-# of `from __future__ import annotations` above, and the one runtime use is
-# behind a default_factory lambda.
+# Bound lazily by _load_c28x(): importing this module must not require the
+# decoder, so `f28335-tools stitch` still works when c28x is unavailable.
 Decoder = None
 BranchType = None
 
@@ -100,7 +97,6 @@ def _load_c28x() -> None:
     BranchType = _BranchType
 
 
-# ── Region table (code-bearing regions only) ────────────────────────────────
 # Mirrors reconstruct_f28335.sh / dump_f28335.sh. (filename, section, origin_word,
 # len_words). Boot ROM is the TI mask ROM (boot loader); flash is the firmware.
 @dataclass
@@ -118,25 +114,20 @@ CODE_REGIONS = [
     ("bootrom.bin", "bootrom", 0x3FE000, 0x02000),
 ]
 
-# Flash entry vector: the boot ROM branches here for "boot to flash". Holds an
-# LB to _c_int00. (NB: this is word 0x33FFF6, just below the CSM password words
-# 0x33FFF8-0x33FFFF -- NOT the boot ROM reset vector 0x3FFFC0.)
+# Flash entry vector (word 0x33FFF6, just below the CSM password words
+# 0x33FFF8-0x33FFFF) -- NOT the boot ROM reset vector 0x3FFFC0.
 FLASH_ENTRY_VECTOR_WORD = 0x33FFF6
 # Boot ROM reset vector (32-bit pointer to InitBoot), within the bootrom image.
 BOOTROM_RESET_VECTOR_WORD = 0x3FFFC0
 
-# Values that, when they appear in a LONG run, are filler/erased, not data:
-#   0xFFFF erased flash, 0x0000 zero-fill, 0x7625 ESTOP0 (cl2000 sector filler).
-# A *short* run (e.g. a lone 0x0000 between floats in a param table) is NOT
-# padding -- it is part of the surrounding data block and must be absorbed.
+# Filler only in a LONG run: 0xFFFF erased, 0x0000 zero-fill, 0x7625 ESTOP0.
+# A short run is part of the surrounding data block and must be absorbed.
 PADDING_VALUES = (0x0000, 0xFFFF, 0x7625)
 # Min length (words) of a single-value run for it to count as padding/filler.
 DEFAULT_MIN_PAD_WORDS = 6
 
-# Minimum span (words) for an uncovered, non-padding run to be called data.
-# Conservative on purpose: substantial const blocks (WGS84, string/param pools)
-# get marked; small ambiguous gaps (literal pools, descent-missed snippets) are
-# left UNCLASSIFIED so the importer never forces likely-code to data.
+# Conservative on purpose: ambiguous gaps stay UNCLASSIFIED so the importer
+# never forces likely-code to data.
 DEFAULT_MIN_DATA_WORDS = 8
 
 
@@ -152,7 +143,6 @@ class Classifier:
     insn_starts: set[int] = field(default_factory=set)  # descent instruction heads
     func_sources: dict[int, str] = field(default_factory=dict)  # entry_word -> source
 
-    # ── address helpers ──────────────────────────────────────────────────
     def region_of(self, word: int) -> Region | None:
         for r in self.regions:
             if r.origin <= word < r.origin + r.length:
@@ -177,7 +167,6 @@ class Classifier:
         if not self.quiet:
             sys.stderr.write(msg + "\n")
 
-    # ── seed discovery ───────────────────────────────────────────────────
     def linear_scan(self) -> tuple[set[int], set[int], set[int]]:
         """Self-synchronising linear decode over every code region.
 
@@ -266,7 +255,6 @@ class Classifier:
                     i += 4
         return out
 
-    # ── recursive descent ────────────────────────────────────────────────
     def descend(self, seeds: set[int]) -> None:
         """Walk instructions from each seed, recording covered words and queuing
         call/branch successors, until return/halt/invalid/region-edge."""
@@ -320,7 +308,6 @@ class Classifier:
                 # NONE / TRAP -> fall through
                 cur += size_words
 
-    # ── gap recovery ─────────────────────────────────────────────────────
     def known_call_sites(self, lo: int, hi: int, known_funcs: set[int]) -> list[int]:
         """Addresses in [lo, hi) where an LCR/call targets an already-known
         function, scanned PER WORD (alignment-independent) so inline code is
@@ -411,7 +398,6 @@ class Classifier:
             if gained == 0:
                 break
 
-    # ── range extraction ─────────────────────────────────────────────────
     def function_end(self, entry: int) -> int:
         """End (exclusive) of the maximal contiguous covered run from ``entry``."""
         w = entry
@@ -500,7 +486,6 @@ class Classifier:
                     w += 1
         return out
 
-    # ── driver ───────────────────────────────────────────────────────────
     def run(self) -> dict:
         # Seeds: reset vectors.
         reset_seeds: set[int] = set()

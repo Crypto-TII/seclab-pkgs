@@ -1,12 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2025 Brian McGillion
 #
-# Installs Binary Ninja when features.development.binaryninja.enable is set by
-# the NixOS side (nixosModules.binaryninja).
-#
-# `nix-binary-ninja` is partially applied at export time rather than read from a
-# module argument, so this works regardless of whether the consumer threads
-# flake inputs into their home-manager scope.
+# nix-binary-ninja is partially applied at export time so this works whether or
+# not the consumer threads flake inputs into their home-manager scope.
 { nix-binary-ninja }:
 
 {
@@ -19,13 +15,8 @@
 let
   cfg = osConfig.features.development.binaryninja;
 
-  # Binary Ninja ships as an out-of-tree zip that cannot be a flake input: a
-  # missing file would break `nix flake update` on every host, including those
-  # that never install it. requireFile keeps it out of flake evaluation
-  # entirely -- it is only forced when something actually builds this.
-  #
-  # Provision the zip once per host by dropping it in seclab-pkgs'
-  # requiredFiles/ and running `stage-required-files`.
+  # requireFile, not a flake input: a missing zip would otherwise break
+  # `nix flake update` on every host, including those that never install it.
   binaryninja-src = pkgs.requireFile {
     name = "binaryninja_linux_dev_ultimate.zip";
     inherit (cfg) sha256;
@@ -37,10 +28,7 @@ let
     '';
   };
 
-  # Python packages required by Binary Ninja plugins.
-  #
-  # svd2py comes from this flake's overlays.default, which this module
-  # therefore depends on.
+  # svd2py comes from overlays.default, which this module therefore depends on.
   pluginPythonDeps = with pkgs.python3Packages; [
     click
     httpx
@@ -67,10 +55,7 @@ let
   sitePackages = "${venvDir}/lib/python${pkgs.python3.pythonVersion}/site-packages";
   settingsFile = "${binjaDir}/settings.json";
 
-  # One path per line, from the same makePythonPath the wrapper uses, so the
-  # venv and the wrapper cannot list different packages. It is the transitive
-  # closure, not just pluginPythonDeps: httpx alone drags in httpcore, h11,
-  # idna, certifi, anyio and sniffio.
+  # Same makePythonPath as the wrapper, so the venv and wrapper cannot diverge.
   pluginDepsPth = pkgs.writeText "nix-plugin-deps.pth" (
     lib.replaceStrings [ ":" ] [ "\n" ] (pkgs.python3.pkgs.makePythonPath pluginPythonDeps) + "\n"
   );
@@ -92,22 +77,18 @@ let
         echo "venv already current for ${pkgs.python3}"
       fi
 
-      # A venv is isolated, so the closure's packages are not on its sys.path
-      # and Binary Ninja resolves plugin dependencies inside it. Drop them in
-      # via a .pth. Rewritten every run, not just when the venv is recreated:
-      # the stamp tracks python, but these paths move whenever any dep does.
+      # A venv is isolated, so inject the closure via a .pth. Rewritten every
+      # run: the stamp tracks python, but these paths move when any dep does.
       install -Dm644 "${pluginDepsPth}" "${sitePackages}/nix-plugin-deps.pth"
     '';
   };
 
-  # The keys this module owns in Binary Ninja's settings.json, and only those.
-  # An empty set means there is nothing to sync and no unit is defined.
+  # An empty set means nothing to sync and no unit is defined.
   settingsPatch =
     lib.optionalAttrs cfg.sidekick.enable { "python.virtualenv" = sitePackages; }
     // lib.optionalAttrs cfg.mcp.enable { "ui.mcp.enabled" = true; };
 
-  # One writer for the whole file. Splitting this per feature would mean two
-  # units racing on the same read-modify-write and dropping each other's keys.
+  # One writer: per-feature units would race on the same read-modify-write.
   settingsSync = pkgs.writeShellApplication {
     name = "binaryninja-settings-sync";
     runtimeInputs = [
@@ -115,8 +96,7 @@ let
       pkgs.jq
     ];
     text = ''
-      # settings.json is Binary Ninja's own file, written by its GUI, so merge
-      # these keys rather than replacing the document.
+      # Binary Ninja's GUI writes this file too, so merge rather than replace.
       mkdir -p "${binjaDir}"
       [ -f "${settingsFile}" ] || echo '{}' >"${settingsFile}"
       tmp="$(mktemp)"
@@ -127,8 +107,7 @@ let
   };
 in
 {
-  # Implication rather than a bare check: a consumer who imports this module
-  # but never enables Binary Ninja has no reason to need the overlay.
+  # Implication: importing without enabling needs no overlay.
   assertions = [
     {
       assertion = cfg.enable -> (pkgs ? svd2py);
@@ -147,21 +126,17 @@ in
     }
   ];
 
-  # Not using nix-binary-ninja's own hmModules.binaryninja: it sets
-  # nixpkgs.overlays in the home-manager scope, which is incompatible with
-  # home-manager.useGlobalPkgs. Add the package directly instead.
+  # Not nix-binary-ninja's hmModules.binaryninja: it sets nixpkgs.overlays in the
+  # home-manager scope, which is incompatible with home-manager.useGlobalPkgs.
   home.packages = lib.optionals (cfg.enable && supported) [
     (
       (nix-binary-ninja.packages.x86_64-linux.binary-ninja-ultimate.override {
         overrideSource = binaryninja-src;
       }).overrideAttrs
       (_old: {
-        # Binary Ninja bundles Qt 6.10.1, which is incompatible with the nixpkgs
-        # Qt 6.10.2 platform plugins injected by wrapQtAppsHook. Replace the
-        # installPhase to:
-        # 1. Keep the bundled Qt .so files (skip the find -delete)
-        # 2. Not pass qtWrapperArgs to makeWrapper (avoids a mismatched
-        #    QT_PLUGIN_PATH)
+        # The bundled Qt 6.10.1 is incompatible with the nixpkgs 6.10.2 plugins
+        # wrapQtAppsHook injects, so keep the bundled .so files and drop
+        # qtWrapperArgs.
         installPhase = ''
           runHook preInstall
 
@@ -169,8 +144,7 @@ in
           mkdir -p $out/opt/binaryninja
           mkdir -p $out/share/pixmaps
           cp -r * $out/opt/binaryninja
-          # Vendored rather than fetched: the upstream URL is unversioned and
-          # its content already changed once, breaking the pinned hash.
+          # Vendored: the upstream URL is unversioned and already changed once.
           cp ${./logo.png} $out/share/pixmaps/binaryninja.png
           chmod +x $out/opt/binaryninja/binaryninja
           buildPythonPath "$pythonDeps"
@@ -178,10 +152,8 @@ in
           makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
             --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
 
-          # The headless MCP server ships in the same zip from 6.0 (Commercial
-          # and Ultimate only) but upstream leaves it in opt/, so nothing can
-          # spawn it by name. Same PYTHONPATH as the GUI: it loads the same
-          # user plugins unless the caller passes -p.
+          # Upstream leaves the headless MCP server in opt/, so nothing can spawn
+          # it by name. Same PYTHONPATH as the GUI: it loads the same plugins.
           if [ -f $out/opt/binaryninja/binaryninja_mcp ]; then
             chmod +x $out/opt/binaryninja/binaryninja_mcp
             makeWrapper $out/opt/binaryninja/binaryninja_mcp $out/bin/binaryninja_mcp \
@@ -196,9 +168,8 @@ in
     )
   ];
 
-  # Sidekick resolves these at runtime; `systemd.user.startServices` restarts
-  # this unit whenever the embedded python store path changes, which is what
-  # makes the venv self-healing across nixpkgs bumps.
+  # systemd.user.startServices restarts this when the python store path moves,
+  # which is what makes the venv self-healing across nixpkgs bumps.
   systemd.user.services.binaryninja-venv = lib.mkIf (cfg.enable && cfg.sidekick.enable && supported) {
     Unit.Description = "Binary Ninja Sidekick venv";
     Service = {

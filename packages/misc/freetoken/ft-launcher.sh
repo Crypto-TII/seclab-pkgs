@@ -19,9 +19,8 @@ py_version="${FREETOKEN_PY_VERSION:-@pythonVersion@}"
 venv="$FREETOKEN_HOME/venv"
 spec="freetoken[accel]==@version@"
 
-# The stamp records everything that would invalidate the venv. Bumping `version`
-# in default.nix therefore re-resolves on the next run; there is no separate
-# update command to remember.
+# The stamp records everything that would invalidate the venv, so bumping
+# `version` re-resolves on the next run.
 stamp="$venv/.freetoken-nix-stamp"
 want="$spec|python$py_version"
 

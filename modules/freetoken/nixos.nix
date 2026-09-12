@@ -1,17 +1,8 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2025 Brian McGillion
-# FreeToken edge-native MoE serving engine
 #
-# Installs the FHS-wrapped `ft` CLI from packages/misc/freetoken. See that file
-# for why FreeToken is sandboxed rather than packaged natively.
-#
-# REQUIRES overlays.default on the consumer's pkgs -- that is where
-# pkgs.freetoken comes from. The assertion below turns a missing overlay into
-# an evaluation error with a message rather than a bare "attribute 'freetoken'
-# missing" later on.
-#
-# Usage:
-#   features.ai.freetoken.enable = true;
+# Requires overlays.default on the consumer's pkgs; the assertion below turns a
+# missing overlay into an evaluation error rather than a missing attribute.
 {
   config,
   lib,
@@ -59,8 +50,7 @@ in
 
   config = lib.mkIf cfg.enable {
     assertions = [
-      # Implication rather than a bare check: a consumer who imports this
-      # module but never enables FreeToken has no reason to need the overlay.
+      # Implication: importing without enabling needs no overlay.
       {
         assertion = cfg.enable -> (pkgs ? freetoken);
         message = ''
@@ -75,8 +65,7 @@ in
           other wheels, and its CUDA 13 kernels are built for that platform.
         '';
       }
-      # FreeToken is NVIDIA-only (driver r580+). Detect the driver via
-      # videoDrivers, which is only populated once an nvidia module is imported.
+      # videoDrivers is only populated once an nvidia module is imported.
       {
         assertion = lib.elem "nvidia" (config.services.xserver.videoDrivers or [ ]);
         message = ''
