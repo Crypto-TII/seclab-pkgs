@@ -11,7 +11,7 @@
 # Needed for binary ninja SVD plugin
 buildPythonPackage (finalAttrs: {
   pname = "svd2py";
-  version = "1.0.2";
+  version = "2.0.0";
   format = "wheel";
 
   src = fetchPypi {
@@ -19,7 +19,7 @@ buildPythonPackage (finalAttrs: {
     format = "wheel";
     dist = "py3";
     python = "py3";
-    hash = "sha256-VPs0ByjQsiyzc7v6ItEZ3Dy5xOsVgQw0jNw8bQwfJXY=";
+    hash = "sha256-MzPh+1PNLAmivNa3WacEnXH1vOZEXq8SY/TZiZNgo84=";
   };
 
   dependencies = [

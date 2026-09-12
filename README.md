@@ -16,7 +16,10 @@ nix/
   flake-module.nix        imports the modules below
   checks.nix              pre-commit hooks + every package exposed as a check
   devshell.nix            `nix develop` / direnv environment
+  exclusions.nix          packages held out of CI checks / the devshell
   treefmt.nix             formatter configuration (`nix fmt`)
+  update.nix              per-package update policy for `update-packages`
+  update-packages.sh      the runner itself
 packages/
   flake-module.nix        assembles all packages + `overlays.default`
   cpp/                    C/C++ packages
@@ -50,6 +53,40 @@ nix build .#<pkg>  # build a single package
 
 It is then automatically available as `packages.<system>.<name>`, as a check,
 and through `overlays.default`.
+
+3. Give it an update policy in [`nix/update.nix`](nix/update.nix). Evaluation
+   fails until you do — see below.
+
+To keep a package out of CI builds or out of `nix develop` (vendor blobs, or
+anything too heavy to build on every PR), add it to
+[`nix/exclusions.nix`](nix/exclusions.nix). It stays in `packages`, so
+`nix build .#<name>` and `nix flake show` keep working.
+
+## Keeping dependencies current
+
+`nix flake update` moves `flake.lock`, and nothing else. Every version pinned
+_inside_ `packages/` is invisible to it — a `fetchPypi` version+hash, a
+`fetchFromGitHub` rev, a bare version string interpolated into a script. Those
+go stale silently. The two commands are complements, not alternatives:
+
+```sh
+nix flake update      # flake inputs (nixpkgs, crane, ...)
+update-packages       # version pins inside packages/
+```
+
+`update-packages` is on `$PATH` in `nix develop`, or run it as
+`nix run .#update-packages`. It rewrites files in place and prints a summary;
+review `git diff`, then `nix fmt && nix flake check`. Extra arguments are
+forwarded to `nix-update` (`--build` and `--commit` are the useful ones).
+
+Packages it cannot bump automatically — vendor downloads behind a portal, and
+temporary overrides waiting on nixpkgs — are listed in the summary with their
+current version rather than skipped silently.
+
+Every package must appear in exactly one bucket of `policy` in
+[`nix/update.nix`](nix/update.nix) (`auto`, `manual`, `pinned`, or `derived`).
+Adding a package without classifying it fails evaluation — including in
+`nix flake check` — which is what stops the next one from quietly rotting.
 
 ## Modules
 

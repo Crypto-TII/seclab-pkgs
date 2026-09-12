@@ -22,30 +22,17 @@ let
       rustPackages = import ./rust { inherit callPackage crane; };
     in
     cppPackages // goPackages // miscPackages // pythonPackages // rustPackages;
-
-  # nix/checks.nix turns every entry in perSystem.packages into a
-  # `package-<name>` check. Exclude large bin wrappers.
-  ciExclude = [
-    # keep-sorted start
-    # An FHS sandbox around an unfree CUDA 13 closure, x86_64-linux only.
-    # Building it in CI would prove nothing: the derivation is just the
-    # sandbox, and everything that can break happens at runtime inside it.
-    "freetoken"
-    # Ghidra plus seven extensions -- far too heavy for every CI run.
-    "ghidra-re"
-    "stm32cubeprogrammer"
-    "uniflash"
-    # keep-sorted end
-  ];
 in
 {
+  # The full set, unfiltered. Heavy packages are held back in nix/exclusions.nix
+  # at the layers that build them (nix/checks.nix, nix/devshell.nix).
   perSystem =
     { pkgs, ... }:
     {
-      packages = removeAttrs (mkSeclabPkgs {
+      packages = mkSeclabPkgs {
         inherit pkgs;
         inherit (inputs) crane;
-      }) ciExclude;
+      };
     };
 
   # Overlay for use by downstream consumers.

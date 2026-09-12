@@ -6,5 +6,6 @@
     ./devshell.nix
     ./nixpkgs.nix
     ./treefmt.nix
+    ./update.nix
   ];
 }
