@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
 # SPDX-License-Identifier: Apache-2.0
 { inputs, ... }:
+let
+  exclusions = import ./exclusions.nix;
+in
 {
   imports = [ inputs.git-hooks-nix.flakeModule ];
   perSystem =
@@ -18,13 +21,18 @@
       }
       // (
         let
-          # Filter out function attributes like 'override' and 'overrideDerivation'
+          # Filter out function attributes like 'override' and 'overrideDerivation',
+          # plus the packages that are too heavy or impossible to build in CI
+          # (nix/exclusions.nix).
           isPackage =
             name: _value:
-            !(lib.elem name [
-              "override"
-              "overrideDerivation"
-            ]);
+            !(lib.elem name (
+              [
+                "override"
+                "overrideDerivation"
+              ]
+              ++ exclusions.checks
+            ));
           packageAttrs = lib.filterAttrs isPackage self'.packages;
         in
         lib.mapAttrs' (n: lib.nameValuePair "package-${n}") packageAttrs

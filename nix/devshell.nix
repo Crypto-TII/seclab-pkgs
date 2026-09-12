@@ -43,11 +43,9 @@
                 # Function attributes, not packages.
                 "override"
                 "overrideDerivation"
-                # Built against python313 (pyghidra/angr are not packaged for
-                # 3.14). Including it puts a second interpreter in the shell
-                # env, which collides with the 3.14 packages on bin/idle3.
-                "mcp-reva"
-              ];
+              ]
+              # Heavy or conflicting closures.
+              ++ (import ./exclusions.nix).devshell;
               isPackage = name: _value: !(lib.elem name excluded);
             in
             lib.attrValues (lib.filterAttrs isPackage self'.packages);
