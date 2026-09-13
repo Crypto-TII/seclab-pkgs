@@ -11,7 +11,8 @@ seclab.requireSeclabPkgs (
     bloaty
     capstone
     checksec
-    diffoscope
+    # Minimal, not full: the full build drags ghc, ocaml, mono and four JDKs.
+    diffoscopeMinimal
     elfutils
     keystone
     # libtriton, not triton: the module it installs is named triton, which

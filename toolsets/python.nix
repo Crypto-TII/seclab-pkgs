@@ -25,6 +25,7 @@ seclab.requireSeclabPkgs [
       capstone
       claripy
       construct
+      frida-python
       intelhex
       ipython
       keystone-engine
