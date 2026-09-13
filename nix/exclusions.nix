@@ -25,8 +25,6 @@
     # keep-sorted start
     "freetoken"
     "ghidra-re"
-    # python313: a second interpreter collides with 3.14 on bin/idle3.
-    "mcp-reva"
     "stm32cubeprogrammer"
     "uniflash"
     # keep-sorted end

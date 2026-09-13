@@ -2,12 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 {
   ghidra,
-  reva-ghidra-extension,
 }:
 
 ghidra.withExtensions (
-  p:
-  (with p; [
+  p: with p; [
     findcrypt
     ghidra-firmware-utils
     ghidra-golanganalyzerextension
@@ -15,7 +13,7 @@ ghidra.withExtensions (
     kaiju
     lightkeeper
     ret-sync
+    reva
     # ghidra-extensions.wasm is marked broken in this pin.
-  ])
-  ++ [ reva-ghidra-extension ]
+  ]
 )

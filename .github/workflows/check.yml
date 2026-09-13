@@ -24,5 +24,10 @@ jobs:
         run: nix fmt -- --fail-on-change
       - name: Check nix flake show runs successfully
         run: nix flake show
+      # nixpkgs runs the c2000-cgt installer under buildFHSEnv, and bwrap cannot
+      # map uids inside the Nix sandbox while Ubuntu restricts unprivileged user
+      # namespaces.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Check nix flake check
         run: nix flake check

@@ -94,8 +94,6 @@ cat <<'MANUAL'
 
 manual -- vendor download portals, no feed to poll:
 @manualBlock@
-held -- temporary overrides, deliberately not bumped:
-@pinnedBlock@
 MANUAL
 
 if [ ${#updated[@]} -gt 0 ]; then
