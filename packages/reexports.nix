@@ -13,7 +13,7 @@
   ];
   # From tms320c28x-re's overlay.
   c28x = [
-    "python313Packages"
+    "python3Packages"
     "c28x"
   ];
   # From overlays/pwndbg.nix. Only these two of the two dozen attributes

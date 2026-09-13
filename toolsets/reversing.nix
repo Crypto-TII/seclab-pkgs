@@ -8,7 +8,6 @@ seclab.requireSeclabPkgs (
   with pkgs;
   [
     # keep-sorted start
-    binaryninja-free
     cutter
     detect-it-easy
     ghidra-re
@@ -17,6 +16,8 @@ seclab.requireSeclabPkgs (
     radare2
     rizin
     # keep-sorted end
+    # binaryninja-free is missing on purpose: it would shadow the licensed
+    # build homeModules.binaryninja installs. Add it yourself for the free one.
   ]
   ++ lib.optionals stdenv.hostPlatform.isx86_64 [
     # x86_64-only in nixpkgs; throws at drvPath elsewhere.
