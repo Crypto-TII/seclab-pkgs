@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
+#
+# SPDX-License-Identifier: Apache-2.0
+name: weekly-flake-update
+on:
+  schedule:
+    # Monday 08:00 UTC, so a red update PR is on the board at the start of the week.
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # Never cancelled: a cancelled run can leave the branch pushed with no PR.
+  group: weekly-flake-update
+  cancel-in-progress: false
+jobs:
+  update-flake-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+        with:
+          egress-policy: audit
+      # A PAT, not GITHUB_TOKEN: GitHub suppresses `pull_request` for a PR the
+      # default token opened, so `check` would never run and the merge workflow
+      # would never fire. The API call proves the token is live, which an
+      # emptiness test cannot.
+      - name: Require PR automation token
+        env:
+          GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "PR_AUTOMATION_TOKEN is unset." >&2
+            echo "Settings > Secrets and variables > Actions." >&2
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY" --jq '.full_name' >/dev/null
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # create-pull-request pushes with its own token; a persisted
+          # GITHUB_TOKEN credential would take precedence over it.
+          persist-credentials: false
+      - name: Install nix
+        uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
+      - name: Update flake inputs
+        run: nix flake update
+      - name: Detect lockfile changes
+        id: lockfile
+        run: |
+          if git diff --quiet -- flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Show lockfile diff
+        if: steps.lockfile.outputs.changed == 'true'
+        run: git diff -- flake.lock
+      - name: Create pull request
+        id: create_pr
+        if: steps.lockfile.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
+        with:
+          token: ${{ secrets.PR_AUTOMATION_TOKEN }}
+          commit-message: "bump(flake.lock): weekly nix flake update"
+          title: "bump(flake.lock): weekly flake input update"
+          body: |
+            ## Summary
+
+            - `nix flake update`: move every flake input to its current tip
+            - only `flake.lock` is touched
+
+            ## Notes
+
+            - Opened by `.github/workflows/weekly-flake-update.yml`.
+            - `check` runs against this PR as it would any other.
+            - `.github/workflows/merge-weekly-flake-update.yml` squash-merges it
+              once `check` is green, and only then. A red week stays open.
+            - `nix flake update` cannot see the version pins inside `packages/`;
+              run `update-packages` for those.
+          branch: automation/weekly-flake-update
+          delete-branch: true
+          labels: dependencies
+          # The merge job re-checks this; here it keeps a stray file out of the
+          # commit in the first place.
+          add-paths: |
+            flake.lock
+      - name: Report pull request
+        if: steps.lockfile.outputs.changed == 'true'
+        env:
+          PR_OPERATION: ${{ steps.create_pr.outputs.pull-request-operation }}
+          PR_NUMBER: ${{ steps.create_pr.outputs.pull-request-number }}
+          PR_URL: ${{ steps.create_pr.outputs.pull-request-url }}
+        run: |
+          printf 'operation: %s\nnumber: %s\nurl: %s\n' \
+            "$PR_OPERATION" "$PR_NUMBER" "$PR_URL" >> "$GITHUB_STEP_SUMMARY"

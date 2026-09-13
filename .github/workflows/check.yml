@@ -11,6 +11,9 @@ permissions:
 jobs:
   run-checks:
     runs-on: ubuntu-latest
+    # A green run is ~3 minutes; the job would otherwise inherit GitHub's
+    # 6-hour limit, and the weekly flake bump is what turns one into the other.
+    timeout-minutes: 45
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
@@ -20,6 +23,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Install nix
         uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
+        with:
+          # Injected here rather than trusted from the flake's own nixConfig:
+          # this workflow runs on fork pull requests, and --accept-flake-config
+          # would let a PR add its own substituter and signing key. Without it
+          # nix logs "ignoring untrusted flake configuration setting" and builds
+          # everything this repo publishes from source.
+          extra_nix_config: |
+            extra-substituters = https://ghaf-dev.cachix.org
+            extra-trusted-public-keys = ghaf-dev.cachix.org-1:S3M8x3no8LFQPBfHw1jl6nmP8A7cVWKntoMKN3IsEQY=
       - name: Check formatting
         run: nix fmt -- --fail-on-change
       - name: Check nix flake show runs successfully
@@ -31,3 +43,11 @@ jobs:
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Check nix flake check
         run: nix flake check
+      # The runner is x86_64 and a plain `nix flake check` silently omits every
+      # other system, so an x86-only package leaking into a shared toolset would
+      # ship green. Instantiating the shell forces drvPath, which is what throws
+      # for an unsupported platform or a renamed attribute. Not
+      # `--all-systems`: that also evaluates packages.aarch64-linux.freetoken
+      # and friends, which are x86_64-only by design.
+      - name: Check the RE shell instantiates for aarch64
+        run: nix eval --raw .#devShells.aarch64-linux.re.drvPath

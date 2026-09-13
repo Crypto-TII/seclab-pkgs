@@ -1,0 +1,40 @@
+{
+  "!comment": "This is a nixpkgs Gradle dependency lockfile. For more details, refer to the Gradle section in the nixpkgs manual.",
+  "!version": 1,
+  "https://maven-central.storage-download.googleapis.com/maven2": {
+    "com/google/code/findbugs#jsr305/3.0.2": {
+      "jar": "sha256-dmrSoHg/JoeWLIrXTO7MOKKLn3Ki0IXuQ4t4E+ko0Mc=",
+      "pom": "sha256-GYidvfGyVLJgGl7mRbgUepdGRIgil2hMeYr+XWPXjf4="
+    },
+    "com/google/gradle#osdetector-gradle-plugin/1.7.3": {
+      "jar": "sha256-a0aS+ROiGx+2Axae54uo8+SrKvnXYq+cqIt5EmwcCtE=",
+      "pom": "sha256-hGDJUBJ8o1mHZhYeOLT/jWO01p+4MQoW4As1E1ABDBE="
+    },
+    "com/google/protobuf#protobuf-gradle-plugin/0.9.5": {
+      "jar": "sha256-0AfdqBr+rq1dqwXCf+AjzLrJd5Dk0ReH9L5o5nFlV/g=",
+      "pom": "sha256-ZGe+F84LfYei0lLpP9vB7hUT/aU/BjqFYx+9vtUOKuY="
+    },
+    "kr/motd/maven#os-maven-plugin/1.7.1": {
+      "jar": "sha256-9Hru+Ggh5SsrGHWJeL0EXwPXIikuMudHCCEixiKJUuA=",
+      "pom": "sha256-S3WABEIrljPdMY8p54Tx0YC9ilkgzVCvGTCGH21qVHY="
+    },
+    "org/sonatype/oss#oss-parent/7": {
+      "pom": "sha256-tR+IZ8kranIkmVV/w6H96ne9+e9XRyL+kM5DailVlFQ="
+    },
+    "org/sonatype/oss#oss-parent/9": {
+      "pom": "sha256-+0AmX5glSCEv+C42LllzKyGH7G8NgBgohcFO8fmCgno="
+    }
+  },
+  "https://repo.maven.apache.org/maven2/com/google": {
+    "protobuf#protobuf-bom/4.31.0": {
+      "pom": "sha256-Y9iGmhie8C2+3XxnN+FsGYa0aYOufQyNG+8s92sz2Ac="
+    },
+    "protobuf#protobuf-java/4.31.0": {
+      "jar": "sha256-aHc9zNbMWDWvenSHWc7PXqIP8IMTbjhH++lFcrjg7Wo=",
+      "pom": "sha256-aElbKMVNzVwyTQxRb7igjQoaJWvNrIFIN+ciYfEqCdM="
+    },
+    "protobuf#protobuf-parent/4.31.0": {
+      "pom": "sha256-H1mhQuar05Jar9Fo25tU0QhP7MhPW4DU3jVPrJ4I/Lg="
+    }
+  }
+}

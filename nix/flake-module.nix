@@ -4,7 +4,10 @@
   imports = [
     ./checks.nix
     ./devshell.nix
+    ./lib.nix
+    ./mcp.nix
     ./nixpkgs.nix
+    ./re-environment.nix
     ./treefmt.nix
     ./update.nix
   ];

@@ -25,6 +25,14 @@ precedence = "aggregate"
 SPDX-FileCopyrightText = "2025 Brian McGillion"
 SPDX-License-Identifier = "MIT"
 
+# A generated Gradle dependency lockfile: JSON takes no comments, so it cannot
+# carry an inline SPDX header. Regenerated with the package's own updateScript.
+[[annotations]]
+path = "packages/misc/ghidra-binexport/deps.json"
+precedence = "closest"
+SPDX-FileCopyrightText = "2025-2026 Technology Innovation Institute (TII)"
+SPDX-License-Identifier = "Apache-2.0"
+
 # The Binary Ninja logo, used as the package's desktop icon. Vendored rather
 # than fetched at build time: the upstream URL is unversioned and its content
 # has already changed once, breaking the pinned hash. A binary file cannot

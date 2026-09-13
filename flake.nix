@@ -7,16 +7,19 @@
       "https://cache.nixos.org"
       "https://ghaf-dev.cachix.org?priority=50"
       "https://nix-community.cachix.org"
+      "https://pwndbg.cachix.org"
     ];
     extra-substituters = [
       "https://cache.nixos.org"
       "https://ghaf-dev.cachix.org?priority=50"
       "https://nix-community.cachix.org"
+      "https://pwndbg.cachix.org"
     ];
     extra-trusted-public-keys = [
       "ghaf-dev.cachix.org-1:S3M8x3no8LFQPBfHw1jl6nmP8A7cVWKntoMKN3IsEQY="
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "pwndbg.cachix.org-1:HhtIpP7j73SnuzLgobqqa8LVTng5Qi36sQtNt79cD3k="
     ];
 
     allow-import-from-derivation = false;
@@ -59,6 +62,15 @@
         nixpkgs.follows = "nixpkgs";
         flake-compat.follows = "flake-compat";
       };
+    };
+
+    # Removed from nixpkgs in 2025-02; upstream ships its own flake. No
+    # `follows`: its flake imports a nixpkgs of its own and its uv.lock was
+    # resolved against that interpreter, so redirecting it would rebuild every
+    # sdist in the lock against a Python upstream never resolved for, and void
+    # pwndbg.cachix.org.
+    pwndbg = {
+      url = "github:pwndbg/pwndbg";
     };
 
     # Its overlay is composed into ours so consumers get python3Packages.c28x.

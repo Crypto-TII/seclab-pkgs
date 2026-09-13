@@ -162,10 +162,10 @@ stdenv.mkDerivation (_finalAttrs: {
   meta = {
     description = "Dynamic binary analysis library: symbolic execution, taint analysis and SMT lifting";
     homepage = "https://github.com/JonathanSalwan/Triton";
-    license = with lib.licenses; [
-      asl20
-      boost # vendored includes/triton/uintwide_t.h
-      mit # vendored includes/triton/py3c_compat.h
+    license = [
+      lib.licenses.asl20
+      lib.licenses.boost # vendored includes/triton/uintwide_t.h
+      lib.licenses.mit # vendored includes/triton/py3c_compat.h
     ];
     platforms = [
       "aarch64-linux"

@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2025-2026 Technology Innovation Institute (TII)
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Runs the default branch's copy of this file, in the base repository's
+# context, with access to secrets, on a trigger any fork can cause to fire.
+# Every clause of the job-level `if:` is a gate, not decoration -- and it is
+# job-level so that a rejected run never materialises the token on a runner.
+name: merge-weekly-flake-update
+on:
+  workflow_run:
+    workflows: ["check"]
+    types: [completed]
+permissions: {}
+concurrency:
+  group: merge-weekly-flake-update
+  cancel-in-progress: false
+jobs:
+  merge-update-pr:
+    if: >
+      github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.repository.full_name == github.repository && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.head_branch == 'automation/weekly-flake-update'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@b09bb98e06d4d774595224525879c09bc6e98c40 # v2.20.1
+        with:
+          egress-policy: audit
+      - name: Require PR automation token
+        env:
+          PR_AUTOMATION_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
+        run: |
+          if [ -z "$PR_AUTOMATION_TOKEN" ]; then
+            echo "PR_AUTOMATION_TOKEN is unset; cannot merge the update PR." >&2
+            exit 1
+          fi
+      - name: Resolve pull request number
+        id: pr
+        env:
+          PULL_REQUESTS_JSON: ${{ toJson(github.event.workflow_run.pull_requests) }}
+        run: |
+          pr_number="$(jq -r '.[0].number // empty' <<<"$PULL_REQUESTS_JSON")"
+          if [ -z "$pr_number" ]; then
+            echo "No pull request attached to the successful check run." >&2
+            exit 1
+          fi
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+      # workflow_run.pull_requests is matched by head SHA and can name a PR
+      # other than the intended one. The `if:` validated the run; this validates
+      # the PR about to be merged, and binds the two together by SHA.
+      - name: Verify pull request provenance
+        env:
+          GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          EXPECTED_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          expected_owner="${GITHUB_REPOSITORY%/*}"
+          expected_repo="${GITHUB_REPOSITORY#*/}"
+          pr_json="$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --json baseRefName,headRefName,headRefOid,headRepository,headRepositoryOwner,isCrossRepository,files)"
+
+          head_ref="$(jq -r '.headRefName' <<<"$pr_json")"
+          head_oid="$(jq -r '.headRefOid' <<<"$pr_json")"
+          base_ref="$(jq -r '.baseRefName' <<<"$pr_json")"
+          is_cross_repo="$(jq -r '.isCrossRepository' <<<"$pr_json")"
+          head_repo_name="$(jq -r '.headRepository.name // empty' <<<"$pr_json")"
+          head_repo_owner="$(jq -r '.headRepositoryOwner.login // empty' <<<"$pr_json")"
+
+          if [ "$head_ref" != "automation/weekly-flake-update" ]; then
+            echo "Refusing PR #$PR_NUMBER: unexpected head ref '$head_ref'." >&2
+            exit 1
+          fi
+          if [ "$base_ref" != "main" ]; then
+            echo "Refusing PR #$PR_NUMBER: unexpected base ref '$base_ref'." >&2
+            exit 1
+          fi
+          if [ "$is_cross_repo" != "false" ]; then
+            echo "Refusing PR #$PR_NUMBER: cross-repository PRs are not auto-mergeable." >&2
+            exit 1
+          fi
+          if [ "$head_repo_owner" != "$expected_owner" ] || [ "$head_repo_name" != "$expected_repo" ]; then
+            echo "Refusing PR #$PR_NUMBER: head repository '$head_repo_owner/$head_repo_name'." >&2
+            exit 1
+          fi
+          if [ "$head_oid" != "$EXPECTED_HEAD_SHA" ]; then
+            echo "Refusing PR #$PR_NUMBER: head '$head_oid' is not the validated '$EXPECTED_HEAD_SHA'." >&2
+            exit 1
+          fi
+
+          # add-paths constrains what the action commits, not what else reached
+          # the branch, and `check` does not care whether a PR is a lockfile bump.
+          unexpected="$(jq -r '[.files[].path | select(. != "flake.lock")] | join(", ")' <<<"$pr_json")"
+          if [ -n "$unexpected" ]; then
+            echo "Refusing PR #$PR_NUMBER: touches more than flake.lock ($unexpected)." >&2
+            exit 1
+          fi
+      # --match-head-commit closes the window between the check above and the
+      # merge: a push in between makes the API refuse rather than merge it.
+      - name: Merge the update PR
+        env:
+          GH_TOKEN: ${{ secrets.PR_AUTOMATION_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.number }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --squash --delete-branch --match-head-commit "$HEAD_SHA"

@@ -10,6 +10,37 @@ let
   policy = {
     # nix-update targets; the value is its extra argv. Every flag is load-bearing.
     auto = {
+      # No git tags at all upstream; the PyPI release is the only version
+      # marker it publishes. fetchPypi emits a files.pythonhosted.org URL, and
+      # nix-update's PyPI fetcher only matches the `pypi` netloc of a
+      # mirror:// URL.
+      biosutilities = [
+        "--version=stable"
+        "--url"
+        "mirror://pypi/b/biosutilities/"
+      ];
+
+      # Main pin: v8 (2023) is the last release and upstream still commits, so
+      # the tag feed is three years stale. Only `src` moves -- the binexport
+      # rev and the abseil/protobuf/sqlite archives beside it are
+      # hand-maintained, and a bump needing them in step fails the build rather
+      # than passing quietly.
+      bindiff = [
+        "--version=branch"
+        "-vr"
+        "v?([0-9].*)"
+      ];
+
+      # Main pin, and the one place the BinExport rev lives: bumping this also
+      # moves the tree bindiff's CMake build compiles against. deps.json has to
+      # be regenerated alongside it, with the package's own
+      # `mitmCache.updateScript`.
+      ghidra-binexport = [
+        "--version=branch"
+        "-vr"
+        "v?([0-9].*)"
+      ];
+
       # Two tag streams: the weekly cronbuild-* and the dormant, hand-cut
       # release_*. Matching cronbuild only keeps a version sort from flipping
       # between them, and skips the malformed release_7.91.18308B/C tags.
@@ -36,6 +67,15 @@ let
         "mirror://pypi/f/freetoken/"
       ];
 
+      # No GitHub releases, so nix-update falls back to the tag feed -- which
+      # still carries 3.2.dev0. The anchors keep that prerelease out of the
+      # version sort.
+      psptool = [
+        "--version=stable"
+        "-vr"
+        "^([0-9.]+)$"
+      ];
+
       # Unanchored on purpose: without a regex nix-update picks the non-numeric
       # `last-support-for-xbee-s6b` tag, and `^([0-9].*)` drops `v1.0-37`.
       proploader = [
@@ -59,17 +99,23 @@ let
       uniflash = "https://www.ti.com/tool/UNIFLASH";
     };
 
+    # Bumped by whoever owns them -- nixpkgs, or an input's overlay. Read from
+    # the data file so adding a re-export cannot leave a ghost entry here.
+    reexported = lib.attrNames (import ../packages/reexports.nix);
+
     # Nothing of their own to bump.
     derived = [
       # keep-sorted start
       "f28335-tools"
       "ghidra-re"
+      "mcp-config"
       "stage-required-files"
       # keep-sorted end
     ];
   };
 
-  classified = lib.attrNames policy.auto ++ lib.attrNames policy.manual ++ policy.derived;
+  classified =
+    lib.attrNames policy.auto ++ lib.attrNames policy.manual ++ policy.reexported ++ policy.derived;
 
   # Not packages.
   notPackages = [
@@ -99,7 +145,7 @@ in
         lib.throwIf (unclassified != [ ])
           ''
             nix/update.nix: no update policy for ${lib.concatStringsSep ", " unclassified}.
-            Add each to exactly one of policy.auto / manual / derived.
+            Add each to exactly one of policy.auto / manual / reexported / derived.
           ''
           (
             lib.throwIf (ghosts != [ ]) ''
