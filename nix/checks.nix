@@ -21,14 +21,18 @@ in
       // (
         let
           isPackage =
-            name: _value:
+            name: value:
             !(lib.elem name (
               [
                 "override"
                 "overrideDerivation"
               ]
               ++ exclusions.checks
-            ));
+            ))
+            # meta.platforms rather than the exclusion list: an x86_64-only
+            # package throws at drvPath on aarch64, which would fail the whole
+            # aarch64 check set rather than skip one entry.
+            && lib.meta.availableOn pkgs.stdenv.hostPlatform value;
           packageAttrs = lib.filterAttrs isPackage self'.packages;
         in
         lib.mapAttrs' (n: lib.nameValuePair "package-${n}") packageAttrs

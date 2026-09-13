@@ -2,6 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 { inputs, ... }:
 let
+  inherit (inputs.nixpkgs) lib;
+
+  # Through pkgs, not the overlay directly, so `packages` and `overlays.default`
+  # cannot disagree about what a re-export resolves to.
+  mkReexports =
+    pkgs: builtins.mapAttrs (_: path: lib.getAttrFromPath path pkgs) (import ./reexports.nix);
+
   # `import`, not `callPackage`, for the category dirs: the attribute names must
   # be statically known or composing this overlay with others recurses forever.
   mkSeclabPkgs =
@@ -22,16 +29,19 @@ in
   perSystem =
     { pkgs, ... }:
     {
-      packages = mkSeclabPkgs {
-        inherit pkgs;
-        inherit (inputs) crane;
-      };
+      packages =
+        mkSeclabPkgs {
+          inherit pkgs;
+          inherit (inputs) crane;
+        }
+        // mkReexports pkgs;
     };
 
   # Through `final`, not `prev`: f28335-tools takes uniflash, which this same
   # overlay contributes. Composed, so consumers get c28x from one overlay.
   flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
     (import ../overlays/angr-suite.nix)
+    (import ../overlays/pwndbg.nix { inherit (inputs) pwndbg; })
     inputs.tms320c28x-re.overlays.default
     (
       final: _prev:
