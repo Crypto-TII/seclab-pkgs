@@ -59,12 +59,6 @@ let
       uniflash = "https://www.ti.com/tool/UNIFLASH";
     };
 
-    # Temporary overrides, dropped once nixpkgs catches up.
-    pinned = {
-      mcp-reva = "placeholder until nixpkgs ships ReVa";
-      reva-ghidra-extension = "asset must match the nixpkgs ghidra series";
-    };
-
     # Nothing of their own to bump.
     derived = [
       # keep-sorted start
@@ -75,11 +69,7 @@ let
     ];
   };
 
-  classified =
-    lib.attrNames policy.auto
-    ++ lib.attrNames policy.manual
-    ++ lib.attrNames policy.pinned
-    ++ policy.derived;
+  classified = lib.attrNames policy.auto ++ lib.attrNames policy.manual ++ policy.derived;
 
   # Not packages.
   notPackages = [
@@ -109,7 +99,7 @@ in
         lib.throwIf (unclassified != [ ])
           ''
             nix/update.nix: no update policy for ${lib.concatStringsSep ", " unclassified}.
-            Add each to exactly one of policy.auto / manual / pinned / derived.
+            Add each to exactly one of policy.auto / manual / derived.
           ''
           (
             lib.throwIf (ghosts != [ ]) ''
@@ -121,9 +111,6 @@ in
       describe = name: lib.getVersion self'.packages.${name};
       manualBlock = lib.concatStringsSep "\n" (
         lib.mapAttrsToList (name: url: "  ${name} ${describe name} -- ${url}") policy.manual
-      );
-      pinnedBlock = lib.concatStringsSep "\n" (
-        lib.mapAttrsToList (name: why: "  ${name} ${describe name} -- ${why}") policy.pinned
       );
 
       updatePackages = guard (
@@ -139,11 +126,9 @@ in
           ];
           # readFile of a source path, not a derivation: this flake sets
           # allow-import-from-derivation = false.
-          text =
-            builtins.replaceStrings
-              [ "@autoCalls@" "@manualBlock@" "@pinnedBlock@" ]
-              [ autoCalls manualBlock pinnedBlock ]
-              (builtins.readFile ./update-packages.sh);
+          text = builtins.replaceStrings [ "@autoCalls@" "@manualBlock@" ] [ autoCalls manualBlock ] (
+            builtins.readFile ./update-packages.sh
+          );
           meta = {
             description = "Bump the package version pins that `nix flake update` cannot see";
             mainProgram = "update-packages";

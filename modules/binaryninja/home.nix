@@ -133,38 +133,38 @@ in
       (nix-binary-ninja.packages.x86_64-linux.binary-ninja-ultimate.override {
         overrideSource = binaryninja-src;
       }).overrideAttrs
-      (_old: {
-        # The bundled Qt 6.10.1 is incompatible with the nixpkgs 6.10.2 plugins
-        # wrapQtAppsHook injects, so keep the bundled .so files and drop
-        # qtWrapperArgs.
-        installPhase = ''
-          runHook preInstall
+        (_old: {
+          # The bundled Qt 6.10.1 is incompatible with the nixpkgs 6.10.2 plugins
+          # wrapQtAppsHook injects, so keep the bundled .so files and drop
+          # qtWrapperArgs.
+          installPhase = ''
+            runHook preInstall
 
-          mkdir -p $out/bin
-          mkdir -p $out/opt/binaryninja
-          mkdir -p $out/share/pixmaps
-          cp -r * $out/opt/binaryninja
-          # Vendored: the upstream URL is unversioned and already changed once.
-          cp ${./logo.png} $out/share/pixmaps/binaryninja.png
-          chmod +x $out/opt/binaryninja/binaryninja
-          buildPythonPath "$pythonDeps"
-          pluginPythonPath="${pkgs.python3.pkgs.makePythonPath pluginPythonDeps}"
-          makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
-            --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
-
-          # Upstream leaves the headless MCP server in opt/, so nothing can spawn
-          # it by name. Same PYTHONPATH as the GUI: it loads the same plugins.
-          if [ -f $out/opt/binaryninja/binaryninja_mcp ]; then
-            chmod +x $out/opt/binaryninja/binaryninja_mcp
-            makeWrapper $out/opt/binaryninja/binaryninja_mcp $out/bin/binaryninja_mcp \
+            mkdir -p $out/bin
+            mkdir -p $out/opt/binaryninja
+            mkdir -p $out/share/pixmaps
+            cp -r * $out/opt/binaryninja
+            # Vendored: the upstream URL is unversioned and already changed once.
+            cp ${./logo.png} $out/share/pixmaps/binaryninja.png
+            chmod +x $out/opt/binaryninja/binaryninja
+            buildPythonPath "$pythonDeps"
+            pluginPythonPath="${pkgs.python3.pkgs.makePythonPath pluginPythonDeps}"
+            makeWrapper $out/opt/binaryninja/binaryninja $out/bin/binaryninja \
               --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
-          else
-            echo "note: this Binary Ninja zip has no binaryninja_mcp; headless MCP unavailable"
-          fi
 
-          runHook postInstall
-        '';
-      })
+            # Upstream leaves the headless MCP server in opt/, so nothing can spawn
+            # it by name. Same PYTHONPATH as the GUI: it loads the same plugins.
+            if [ -f $out/opt/binaryninja/binaryninja_mcp ]; then
+              chmod +x $out/opt/binaryninja/binaryninja_mcp
+              makeWrapper $out/opt/binaryninja/binaryninja_mcp $out/bin/binaryninja_mcp \
+                --prefix PYTHONPATH : "$program_PYTHONPATH:$pluginPythonPath"
+            else
+              echo "note: this Binary Ninja zip has no binaryninja_mcp; headless MCP unavailable"
+            fi
+
+            runHook postInstall
+          '';
+        })
     )
   ];
 
