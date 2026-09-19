@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: 2026 Brian McGillion
 """classify_f28335 -- code/data + function-entry classifier for TMS320F28335 dumps.
 
-Standalone recursive-descent classifier that reuses the ``c28x.decoder`` from the
-``tms320c28x-re`` Binary Ninja plugin. It produces a machine-readable manifest
+Standalone recursive-descent classifier that reuses the ``c28x_rs`` decoder from
+the ``tms320c28x-re`` Binary Ninja plugin. It produces a machine-readable manifest
 (``dumped.analysis.json``) describing function entries, code ranges, and data
 ranges of the code-bearing regions (flash + boot ROM), in chip-WORD addresses.
 
@@ -35,8 +35,9 @@ f28335-dump runs this with, so it is simply importable and no search is needed.
 
 ``$C28X_RE_ROOT`` remains as an escape hatch for running this script directly
 against a checkout (``bash reconstruct_f28335.sh`` outside Nix); point it at the
-repo root, the directory holding ``c28x/`` and ``isa/``. ``c28x.isa.ISA``
-locates its YAML itself in either layout.
+repo root, the directory holding ``c28x_rs.py`` and ``isa/``. The decoder needs
+no YAML of its own: it drives the ``c28xdec`` CLI, which has the table compiled
+in.
 """
 
 from __future__ import annotations
@@ -50,30 +51,35 @@ from pathlib import Path
 
 
 def _ensure_c28x_importable() -> None:
-    """Make the ``c28x`` package importable.
+    """Make the ``c28x_rs`` module importable.
 
     Packaged, it is a declared dependency and the first import succeeds. Run
     directly against a checkout it will not be, so honour ``$C28X_RE_ROOT``.
+
+    The module is ``c28x_rs``, not the old ``c28x`` package: upstream retired a
+    second Python decoder generated from the same YAML as the Rust one and
+    compared against it by nothing. ``c28x_rs`` reaches the real decoder through
+    the ``c28xdec`` CLI, so there is only ever one instruction table.
     """
     try:
-        import c28x.decoder
+        import c28x_rs
 
         return
     except ImportError:
         pass
 
     root = os.environ.get("C28X_RE_ROOT")
-    if root and (Path(root) / "c28x" / "decoder.py").is_file():
+    if root and (Path(root) / "c28x_rs.py").is_file():
         sys.path.insert(0, root)
-        import c28x.decoder  # noqa: F401
+        import c28x_rs  # noqa: F401
 
         return
 
     sys.stderr.write(
-        "classify_f28335: cannot import the 'c28x' package.\n"
+        "classify_f28335: cannot import 'c28x_rs'.\n"
         "  This is a packaging error unless you are running the script\n"
         "  directly; in that case set C28X_RE_ROOT to your tms320c28x-re\n"
-        "  checkout (the dir that contains c28x/ and isa/).\n"
+        "  checkout (the dir that contains c28x_rs.py and isa/).\n"
     )
     raise SystemExit(3)
 
@@ -90,8 +96,8 @@ def _load_c28x() -> None:
     if Decoder is not None:
         return
     _ensure_c28x_importable()
-    from c28x.decoder import Decoder as _Decoder
-    from c28x.types import BranchType as _BranchType
+    from c28x_rs import BranchType as _BranchType
+    from c28x_rs import Decoder as _Decoder
 
     Decoder = _Decoder
     BranchType = _BranchType
@@ -280,10 +286,10 @@ class Classifier:
                 for k in range(size_words):
                     self.covered.add(cur + k)
 
-                if insn.name == "ESTOP0":  # emulation halt -> no_ret
+                bt = insn.branch_type
+                if bt == BranchType.HALT:  # ESTOP0/ESTOP1 -> no_ret
                     break
 
-                bt = insn.branch_type
                 tw = insn.branch_target // 2 if insn.branch_target is not None else None
                 tgt_ok = tw is not None and self.region_of(tw) is not None
 
