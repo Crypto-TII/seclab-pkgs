@@ -16,9 +16,13 @@
     "python3Packages"
     "c28x"
   ];
+  # The CLI c28x drives; also useful on its own.
+  c28xdec = [ "c28xdec" ];
   # From overlays/pwndbg.nix. Only these two of the two dozen attributes
   # upstream publishes.
   pwndbg = [ "pwndbg" ];
   pwndbg-lldb = [ "pwndbg-lldb" ];
+  # Binary Ninja architecture plugin, from tms320c28x-re's overlay.
+  tms320c28x-binja = [ "tms320c28x-binja" ];
   # keep-sorted end
 }
