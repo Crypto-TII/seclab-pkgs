@@ -38,6 +38,9 @@
     # packagesFrom takes build inputs, and angr's are rustc, cargo and cmake.
     "angr"
     "c28x"
+    # buildRustPackage lists both cargo and the auditable-cargo wrapper, and
+    # both ship bin/cargo, so buildEnv refuses the merge.
+    "c28xdec"
     "freetoken"
     "ghidra-binexport"
     "ghidra-re"
@@ -46,6 +49,7 @@
     "pwndbg"
     "pwndbg-lldb"
     "stm32cubeprogrammer"
+    "tms320c28x-binja"
     "uniflash"
     # keep-sorted end
   ];
