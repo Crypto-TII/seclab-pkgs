@@ -29,5 +29,7 @@ seclab.requireSeclabPkgs (
   ++ lib.optionals stdenv.hostPlatform.isx86_64 [
     aflplusplus
     bindiff
+    # meta.platforms is x86_64-linux; upstream treats aarch64 as a cross target.
+    dynamorio
   ]
 )
