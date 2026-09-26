@@ -35,8 +35,8 @@ seclab.requireSeclabPkgs (
     # has not staged the ST zip cannot even evaluate this list.
   ]
   ++ lib.optionals stdenv.hostPlatform.isx86_64 [
-    f28335-tools
     saleae-logic-2
-    uniflash
+    # uniflash and f28335-tools, which wraps it, are missing for the same
+    # reason: the TI installer is a requireFile.
   ]
 )

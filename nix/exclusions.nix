@@ -11,6 +11,8 @@
     "bindiff"
     # Half-hour from-source build behind a submodule fetch.
     "dynamorio"
+    # Wraps uniflash, a requireFile CI cannot satisfy.
+    "f28335-tools"
     # Unfree CUDA 13 closure, and the derivation is only the FHS sandbox.
     "freetoken"
     # A Gradle build against the whole Ghidra distribution.
