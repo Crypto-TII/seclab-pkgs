@@ -76,7 +76,11 @@ let
           inherit (wheel) hash;
         };
         nativeBuildInputs = final.lib.optional final.stdenv.hostPlatform.isLinux final.autoPatchelfHook;
-        buildInputs = final.lib.optional final.stdenv.hostPlatform.isLinux final.stdenv.cc.cc.lib;
+        # zlib: the aarch64 wheel's bundled blink links libz.so.1.
+        buildInputs = final.lib.optionals final.stdenv.hostPlatform.isLinux [
+          final.stdenv.cc.cc.lib
+          final.zlib
+        ];
         pythonImportsCheck = [ "pyxdia" ];
         meta.description = "Extract program information from PDB files (prebuilt wheel)";
       };
