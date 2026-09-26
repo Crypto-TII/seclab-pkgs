@@ -56,6 +56,7 @@ no-op.
 | --------------------------------------- | ----------------------------------------- | --------------------------- |
 | `binaryninja_linux_dev_ultimate.zip`    | Binary Ninja (`nixosModules.binaryninja`) | base32, set by the consumer |
 | `SetupSTM32CubeProgrammer_linux_64.zip` | `stm32cubeprogrammer`                     | SRI, pinned in-package      |
+| `uniflash_sl.9.6.0.5764.run`            | `uniflash`                                | SRI, pinned in-package      |
 
 The two formats are not interchangeable, which is why the helper prints both.
 

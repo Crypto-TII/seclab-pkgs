@@ -12,11 +12,11 @@
   makeDesktopItem,
   writeShellScript,
   symlinkJoin,
+  version ? "2.23.0",
+  hash ? "sha256-ap5gpaBIxF6zJB+btmvcLmy9ARn7LkJWjcBZ/GFnRCo=",
 }:
 
 let
-  version = "2.22.0";
-
   desktopItem = makeDesktopItem {
     name = "STM32CubeProgrammer";
     # Must match the FHS wrapper binary name (pname of the GUI env below) —
@@ -38,7 +38,7 @@ let
     src = requireFile {
       name = "SetupSTM32CubeProgrammer_linux_64.zip";
       url = "https://www.st.com/en/development-tools/stm32cubeprog.html";
-      hash = "sha256-//oBertNoUWC4Smqmh5Ph+bQcZo8uVDAGE9MtIq2Cqc=";
+      inherit hash;
     };
 
     nativeBuildInputs = [
@@ -181,10 +181,12 @@ let
       at-spi2-atk
       dbus
 
+      brotli
       openssl
       krb5
 
       zlib
+      zstd
       cups
       nspr
       nss

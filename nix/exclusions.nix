@@ -28,7 +28,7 @@
     "pwndbg-lldb"
     # requireFile behind an ST login.
     "stm32cubeprogrammer"
-    # Large vendor installer from TI.
+    # requireFile; the installer is staged by hand.
     "uniflash"
     # keep-sorted end
   ];
