@@ -8,13 +8,13 @@ seclab.requireSeclabPkgs (
   with pkgs;
   [
     # keep-sorted start
-    cutter
+    (cutter.withPlugins (ps: [ ps.rz-ghidra ]))
     detect-it-easy
     ghidra-re
     jadx
     krakatau2
     radare2
-    rizin
+    (rizin.withPlugins (ps: [ ps.rz-ghidra ]))
     # keep-sorted end
     # binaryninja-free is missing on purpose: it would shadow the licensed
     # build homeModules.binaryninja installs. Add it yourself for the free one.

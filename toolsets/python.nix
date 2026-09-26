@@ -28,11 +28,14 @@ seclab.requireSeclabPkgs [
       frida-python
       intelhex
       ipython
+      kaitaistruct
       keystone-engine
       lief
       mcp
       pefile
       pwntools
+      pycryptodome
+      pyelftools
       pyghidra
       pylink-square
       pypcode

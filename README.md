@@ -150,7 +150,7 @@ the module:
       imports = [ seclab-pkgs.flakeModules.default ];
 
       # All optional. `nixpkgs` defaults to ours, `shellName` to "re", and
-      # every toolset to true.
+      # every toolset to true except `cross` and `cross-extra`.
       seclab.re = {
         nixpkgs = inputs.nixpkgs;
         toolsets.hardware = false;
@@ -169,10 +169,22 @@ devShells.default = pkgs.mkShell {
 };
 ```
 
-The groups are `binary-analysis`, `crypto`, `debugging`, `dev-tools`,
-`firmware`, `forensics`, `hardware`, `python` and `reversing`;
-`lib.mkToolsets { inherit pkgs; }` returns all of them as
-`{ packagesByGroup, allPackages }`.
+The groups are `binary-analysis`, `crypto`, `cross`, `cross-extra`,
+`debugging`, `dev-tools`, `firmware`, `forensics`, `hardware`, `python`,
+`reversing` and `static-analysis`; `lib.mkToolsets { inherit pkgs; }` returns
+all of them as `{ packagesByGroup, allPackages }`, with `cross` and
+`cross-extra` left out of `allPackages` unless `enabled` turns them on.
+
+`cross` gives a gcc and binutils per foreign target (`aarch64`, `arm`, `i386`,
+`mips64el`, `mipsel`, `ppc64` (ELFv1), `ppc64le`, `riscv64`), plus a
+`qemu-<arch>-sysroot` command that runs a dynamically linked foreign binary
+against that target's glibc, libgcc_s and libstdc++. `cross-extra` adds `mips`,
+`mips64` and `ppc`, whose toolchains are not in cache.nixos.org and build
+locally. Neither helps with uClibc or musl firmware: point `qemu-<arch> -L` at
+the extracted rootfs for those.
+
+On x86_64, `afl-qemu-arch <arch> afl-fuzz -Q ...` runs AFL++'s QEMU mode
+against a foreign binary; plain `afl-fuzz -Q` handles x86_64 only.
 
 > A toolset needs `pkgs` built with **both** `overlays.default` and
 > `config.allowUnfree = true` — it contains this repo's own packages, and

@@ -11,6 +11,8 @@ _: {
       # keep-sorted start
       binary-analysis = import ../toolsets/binary-analysis.nix;
       crypto = import ../toolsets/crypto.nix;
+      cross = import ../toolsets/cross.nix;
+      cross-extra = import ../toolsets/cross-extra.nix;
       debugging = import ../toolsets/debugging.nix;
       dev-tools = import ../toolsets/dev-tools.nix;
       firmware = import ../toolsets/firmware.nix;
@@ -18,6 +20,7 @@ _: {
       hardware = import ../toolsets/hardware.nix;
       python = import ../toolsets/python.nix;
       reversing = import ../toolsets/reversing.nix;
+      static-analysis = import ../toolsets/static-analysis.nix;
       # keep-sorted end
     };
 

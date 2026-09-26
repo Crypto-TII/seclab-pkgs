@@ -17,10 +17,14 @@ with pkgs;
   hexyl
   imhex
   jq
+  kaitai-struct-compiler
+  nasm
   ninja
+  parallel
   patchelf
   pkg-config
   rehex
   ripgrep
+  wireshark-cli
   # keep-sorted end
 ]
