@@ -50,14 +50,14 @@ in
       description = "Extra packages for the shell, on top of the toolsets.";
     };
 
-    toolsets = lib.genAttrs groups (
-      group:
+    toolsets = lib.mapAttrs (
+      group: enabledByDefault:
       lib.mkOption {
         type = lib.types.bool;
-        default = true;
+        default = enabledByDefault;
         description = "Include the ${group} toolset.";
       }
-    );
+    ) groups;
   };
 
   config.perSystem =
