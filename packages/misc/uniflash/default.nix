@@ -3,24 +3,26 @@
 {
   stdenvNoCC,
   lib,
-  fetchurl,
+  requireFile,
   buildFHSEnv,
   writeShellScript,
   symlinkJoin,
   glibc,
+  version ? "9.6.0",
+  buildId ? "5764",
+  hash ? "sha256-ZueL+gg0kpmcUkpuqXwWtLkL5U1lvq53ASEPtkBLDZw=",
 }:
 
 let
-  version = "9.5.0";
-  buildId = "5651";
-
   package = stdenvNoCC.mkDerivation {
     pname = "uniflash-unwrapped";
     inherit version;
 
-    src = fetchurl {
-      url = "https://dr-download.ti.com/software-development/software-programming-tool/MD-QeJBJLj8gq/${version}/uniflash_sl.${version}.${buildId}.run";
-      hash = "sha256-/2gUq90WcEIGmnmpjaNGXxaSEXQn12B7AaHTgUNjn3M=";
+    # Register with: nix-store --add-fixed sha256 <run>
+    src = requireFile {
+      name = "uniflash_sl.${version}.${buildId}.run";
+      url = "https://www.ti.com/tool/UNIFLASH";
+      inherit hash;
     };
 
     dontUnpack = true;
