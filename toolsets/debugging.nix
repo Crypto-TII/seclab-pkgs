@@ -22,8 +22,4 @@ seclab.requireSeclabPkgs (
     valgrind
     # keep-sorted end
   ]
-  ++ lib.optionals stdenv.hostPlatform.isx86_64 [
-    # meta.platforms is x86_64-linux; upstream treats aarch64 as a cross target.
-    dynamorio
-  ]
 )
