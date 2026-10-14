@@ -4,6 +4,14 @@
 let
   seclab = import ./lib.nix { inherit pkgs; };
 
+  # Upstream 1.4 still declares 1.3.1 in its own setup.py, which
+  # pythonMetadataCheckPhase rejects. pyprojectVersionPatchHook cannot fix it --
+  # the package ships no pyproject.toml for the hook to rewrite -- so the
+  # declared version moves to match the source instead. src is inherited untouched.
+  python-registry = pkgs.python3Packages.python-registry.overridePythonAttrs (_: {
+    version = "1.3.1";
+  });
+
   # angr alone cannot use the default interpreter: overlays/angr-suite.nix
   # patches python313 because nixpkgs' 3.14 angr does not build, its expression
   # predating the Rust extension. Everything else here, angr's own claripy and
@@ -41,6 +49,7 @@ seclab.requireSeclabPkgs [
       pypcode
       pyserial
       python-can
+      python-registry
       r2pipe
       requests
       ropper
@@ -48,9 +57,8 @@ seclab.requireSeclabPkgs [
       yara-python
       z3-solver
       # keep-sorted end
-      # angrcli and python-registry are missing on purpose: both fail
-      # pythonMetadataCheckPhase in this pin, declaring 1.3.0 and 1.4 against
-      # .dist-info metadata that says 1.2.0 and 1.3.1.
+      # angrcli is missing on purpose: it fails pythonMetadataCheckPhase in
+      # this pin, declaring 1.3.0 against .dist-info metadata that says 1.2.0.
     ]
   ))
   angr-python

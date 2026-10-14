@@ -41,6 +41,7 @@ in
   # overlay contributes. Composed, so consumers get c28x from one overlay.
   flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
     (import ../overlays/angr-suite.nix)
+    (import ../overlays/libewf.nix)
     (import ../overlays/pwndbg.nix { inherit (inputs) pwndbg; })
     inputs.tms320c28x-re.overlays.default
     (
