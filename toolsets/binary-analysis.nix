@@ -56,6 +56,10 @@ seclab.requireSeclabPkgs (
   with pkgs;
   [
     # keep-sorted start
+    # 7zz, not p7zip: p7zip's 7z cannot open RAR3 at all. 7-Zip lists it, but
+    # nixpkgs builds _7zz without the unRAR codec, so extraction still fails
+    # with "Unsupported Method" -- use bsdtar (libarchive, below) for that.
+    _7zz
     bloaty
     capa
     capstone
@@ -67,6 +71,9 @@ seclab.requireSeclabPkgs (
     flare-floss
     honggfuzz
     keystone
+    # bsdtar has its own BSD-licensed RAR3 reader, so it extracts archives
+    # _7zz can only list. Also handles ISO, CAB and cpio.
+    libarchive
     # libtriton, not triton: the module it installs is named triton, which
     # would collide with python3Packages.triton.
     libtriton
