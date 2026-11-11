@@ -37,8 +37,6 @@
 
   devshell = [
     # keep-sorted start
-    # packagesFrom takes build inputs, and angr's are rustc, cargo and cmake.
-    "angr"
     "c28x"
     # buildRustPackage lists both cargo and the auditable-cargo wrapper, and
     # both ship bin/cargo, so buildEnv refuses the merge.

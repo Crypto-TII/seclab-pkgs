@@ -15,7 +15,7 @@ import contextlib
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from . import classify, verify
@@ -121,7 +121,7 @@ def _reconstruct(dump_dir: Path, log_path: Path) -> None:
         d.mkdir(parents=True, exist_ok=True)
 
     print(f"reconstruct: {dump_dir}")
-    print(f"started: {datetime.now(timezone.utc).astimezone().isoformat()}")
+    print(f"started: {datetime.now(UTC).astimezone().isoformat()}")
     print()
 
     print("=== encoding .asm files ===")
@@ -223,4 +223,4 @@ def _reconstruct(dump_dir: Path, log_path: Path) -> None:
         f"  regions skipped:  {len(missing)}"
         + (f" ({' '.join(missing)})" if missing else "")
     )
-    print(f"done: {datetime.now(timezone.utc).astimezone().isoformat()}")
+    print(f"done: {datetime.now(UTC).astimezone().isoformat()}")

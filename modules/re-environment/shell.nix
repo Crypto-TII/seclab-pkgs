@@ -21,9 +21,11 @@ pkgs.mkShell (
     # ghidra-re rather than plain ghidra: it is the one carrying the extensions.
     GHIDRA_INSTALL_DIR = "${pkgs.ghidra-re}/lib/ghidra";
 
-    # jpype dlopens libjvm from here, and ghidra is built against openjdk21, so
-    # another JDK loads a JVM the extensions were not compiled for.
-    JAVA_HOME = pkgs.openjdk21.home;
+    # jpype dlopens libjvm from here, and ghidra is built against openjdk25 as
+    # of 12.2, so another JDK loads a JVM the extensions were not compiled for.
+    # Ghidra exposes no passthru for it; `nix-store -q --references` on the
+    # ghidra package names the JDK to follow when this pin goes stale.
+    JAVA_HOME = pkgs.openjdk25.home;
 
     # libtriton deliberately does not propagate its site-packages; this is the
     # consumer that has to. Same interpreter as every other python tool here,

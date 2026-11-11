@@ -47,6 +47,25 @@ ghidra-extensions.buildGhidraExtension (finalAttrs: {
     substituteInPlace build.gradle \
       --replace-fail 'artifact = "com.google.protobuf:protoc:''${protobufVersion}"' \
                      'path = "${lib.getExe protoc}"'
+
+    # jgrapht-core/io 1.5.1 on Maven Central carry a zero-length ZIP extra
+    # field, and Gradle 9 -- what buildGhidraExtension switched to -- refuses to
+    # expand such an archive. The protobuf plugin expands every jar on the proto
+    # path, which buildExtension.gradle fills with Ghidra's bundled jars, so the
+    # two jgrapht ones abort the build. binexport2.proto imports nothing, so the
+    # extraction has nothing to contribute. Both occurrences are the
+    # extractInclude{,Test}Proto blocks. Drop once Gradle accepts them again.
+    substituteInPlace build.gradle \
+      --replace-fail 'dependsOn("copyDependencies")' \
+                     'dependsOn("copyDependencies"); inputFiles.setFrom()'
+
+    # Upstream pins the toolchain to 21, which matched Ghidra until 12.2 moved
+    # to JDK 25 -- and buildGhidraExtension now supplies only that, so Gradle
+    # finds no 21 to resolve the request against. Tracking the running JVM keeps
+    # the extension on whatever Ghidra itself was built with.
+    substituteInPlace build.gradle \
+      --replace-fail 'JavaLanguageVersion.of(21)' \
+                     'JavaLanguageVersion.of(JavaVersion.current().majorVersion)'
   '';
 
   # A tripwire for the pin above: if Ghidra's bundled runtime ever moves ahead

@@ -6,11 +6,6 @@
 # arguments, so nix/update.nix can read the names without a `pkgs`.
 {
   # keep-sorted start
-  # The overlay's whole reason to exist, and nothing else builds it.
-  angr = [
-    "python313Packages"
-    "angr"
-  ];
   # From tms320c28x-re's overlay.
   c28x = [
     "python3Packages"

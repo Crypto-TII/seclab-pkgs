@@ -40,9 +40,10 @@ in
   # Through `final`, not `prev`: f28335-tools takes uniflash, which this same
   # overlay contributes. Composed, so consumers get c28x from one overlay.
   flake.overlays.default = inputs.nixpkgs.lib.composeManyExtensions [
-    (import ../overlays/angr-suite.nix)
+    (import ../overlays/cutter.nix)
     (import ../overlays/libewf.nix)
     (import ../overlays/pwndbg.nix { inherit (inputs) pwndbg; })
+    (import ../overlays/semgrep.nix)
     inputs.tms320c28x-re.overlays.default
     (
       final: _prev:
